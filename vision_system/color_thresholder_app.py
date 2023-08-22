@@ -19,7 +19,7 @@ cv2.createTrackbar("SMin", "Thresholder_App",0,255,nothing)
 cv2.createTrackbar("HMax", "Thresholder_App",0,179,nothing)
 cv2.createTrackbar("HMin", "Thresholder_App",0,179,nothing)
 
-img = cv2.imread(sys.argv[1])
+img = cv2.imread("Test1.png")
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 cv2.setTrackbarPos("VMax", "Thresholder_App", 255)
