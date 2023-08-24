@@ -3,8 +3,8 @@ import numpy as np
 import time
 
 # Simulated data: Distance (in cm) and corresponding pixel counts
-distances = [50, 100, 150, 200, 250]
-pixel_counts = [150, 300, 500, 1000, 2000]
+distances = [15, 25, 30, 35, 40, 45, 50]
+pixel_counts = [125000, 53000, 40000, 26000, 21000, 16000, 13000]
 
 # Initialize camera
 cap = cv2.VideoCapture(0)
