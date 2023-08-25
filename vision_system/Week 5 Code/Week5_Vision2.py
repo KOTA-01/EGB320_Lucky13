@@ -80,7 +80,8 @@ while True:
     masked_view = cv2.bitwise_and(frame, frame, mask=orange_mask)
 
     # Draw the contour on the original frame
-    cv2.drawContours(frame, [largest_contour], -1, (0, 255, 0), 3)
+    if largest_contour is not None:
+        cv2.drawContours(frame, [largest_contour], -1, (0, 255, 0), 3)
 
     # Display the camera feed and the masked view
     cv2.imshow('Camera Feed', frame)
