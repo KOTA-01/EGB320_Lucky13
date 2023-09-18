@@ -1,5 +1,4 @@
 from vision_module.VisionPiV import Vision
-import cv2 
 
 if __name__ == "__main__":
     vision = Vision()  # Create an instance of the Vision class

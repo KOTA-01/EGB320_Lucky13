@@ -134,8 +134,10 @@ class Vision:
                         estimated_distances.append(estimated_distance)
             
             # Calculate the average estimated distance for the current frame
-            if estimated_distances: average_distance = sum(estimated_distances) / len(estimated_distances)
-
+            if estimated_distances: 
+                average_distance = sum(estimated_distances) / len(estimated_distances)
+            else:
+                average_distance = 0
             # Return the relevant information as a dictionary
             info = {
                 "blob_count": circular_blob_count,
