@@ -9,6 +9,7 @@ from enum import IntEnum
 from rowdetection import RowMarkerDetector
 rowdetect = RowMarkerDetector()
 
+#change
 class robot(object):
 	def bayNav(self, bay_number):
 		target_distance = distance_from_wall(bay_number)
