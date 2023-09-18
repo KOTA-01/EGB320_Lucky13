@@ -149,7 +149,7 @@ class Vision:
             "average_distance": average_distance,
             "frame_centroid_x": frame_centroid_x,
             "frame_centroid_y": frame_centroid_y,
-            'frame': frame
+            'frame': (frame)
         }
         return info
 
