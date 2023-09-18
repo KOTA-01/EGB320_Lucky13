@@ -15,7 +15,7 @@ cv2.namedWindow('Masked View')
 
 # Define lower and upper bounds for Black color in HSV
 lower_bound = np.array([0, 0, 0])
-upper_bound = np.array([179, 255, 40])
+upper_bound = np.array([179, 255, 60])
 
 # Camera calibration parameters (adjust as needed)
 focal_length = 500  # Focal length in pixels
