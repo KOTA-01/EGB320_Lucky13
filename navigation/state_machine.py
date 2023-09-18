@@ -32,8 +32,8 @@ if __name__ == '__main__':
 				state = pick_item
 
 			elif state == pick_item:
-				(Where_the_motor_stuff_is).SetTargetVelocities(0, 0)
+				motor.SetTargetVelocities(0, 0)
 				"""Code for picking the item/calling to a function that does that"""
 
 	except KeyboardInterrupt as e:
-		(Where_the_motor_stuff_is).SetTargetVelocities(0, 0)
+		motor.SetTargetVelocities(0, 0)
