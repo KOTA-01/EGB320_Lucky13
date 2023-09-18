@@ -104,6 +104,9 @@ class Vision:
         if frame_blob_centroids:
             frame_centroid_x = int(np.mean([cx for (cx, cy) in frame_blob_centroids]) - (frame.shape[1] / 2))
             frame_centroid_y = int(np.mean([cy for (cx, cy) in frame_blob_centroids]))
+        else:
+            frame_centroid_x = 0
+            frame_centroid_y = 0
 
             # Calculate and display the estimated distance for each blob
             for contour in contours:
@@ -131,6 +134,8 @@ class Vision:
         # Calculate the average estimated distance for the current frame
         if estimated_distances:
             average_distance = sum(estimated_distances) / len(estimated_distances)
+        else:
+            average_distance = 0
             # Display the average distance on the frame
             #cv2.putText(frame, f'Avg. Distance: {average_distance:.2f} cm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
 
