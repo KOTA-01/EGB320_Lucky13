@@ -140,7 +140,7 @@ class Vision:
             #cv2.putText(frame, f'Avg. Distance: {average_distance:.2f} cm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
 
         # Display the camera feed and the masked view
-        #cv2.imshow('Camera Feed', frame)
+        cv2.imshow('Camera Feed', frame)
         #cv2.imshow('Masked View', masked_view)
 
         # Return the relevant information as a dictionary
@@ -149,6 +149,7 @@ class Vision:
             "average_distance": average_distance,
             "frame_centroid_x": frame_centroid_x,
             "frame_centroid_y": frame_centroid_y,
+            'frame': frame
         }
         return info
 
