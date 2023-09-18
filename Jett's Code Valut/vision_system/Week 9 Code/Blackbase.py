@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import time
 
 # Initialize camera
 cap = cv2.VideoCapture(0)
@@ -24,19 +23,12 @@ known_width = 10.0  # Known width of a black blob in centimeters
 # Initialize variables for calculating the center point of blobs
 all_blob_centroids = []
 
-# Circular blob detection threshold
-min_circularity = 0.7  # Adjust this threshold as needed
-
-
 # Main loop for processing video frames
 while True:
     # Capture a frame from the camera
     ret, frame = cap.read()
     if not ret:
         break
-
-    # Measure frame processing time: Start the timer
-    frame_start_time = time.time()
 
     # Convert the frame to HSV color space
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -58,7 +50,6 @@ while True:
     
     # Initialize an empty list to store estimated distances for the current frame
     estimated_distances = []
-
    
     # Iterate through the detected contours
     for contour in contours:
@@ -66,43 +57,36 @@ while True:
         area = cv2.contourArea(contour)
         # Define a threshold for considering a contour as a substantial blob
         min_blob_area = 1000  # Adjust this threshold as needed
-        # Calculate the perimeter of the contour
-        perimeter = cv2.arcLength(contour, True)
 
-        # Check if the perimeter is zero (or very close to zero)
-        if perimeter > 0:
-            # Calculate circularity using the formula: (4 * pi * area) / (perimeter^2)
-            circularity = (4 * np.pi * area) / (perimeter * perimeter)
+        # Define a threshold for considering a contour as a substantial circular blob
+        if area >= min_blob_area:
+            # Find the centroid (center) of the current contour
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                centroid = (cx, cy)
 
-            # Define a threshold for considering a contour as a substantial circular blob
-            if area >= min_blob_area and circularity >= min_circularity:
-                # Find the centroid (center) of the current contour
-                M = cv2.moments(contour)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    centroid = (cx, cy)
+                # Append the centroid to the list of centroids for this frame
+                frame_blob_centroids.append(centroid)
 
-                    # Append the centroid to the list of centroids for this frame
-                    frame_blob_centroids.append(centroid)
+                # Increment the blob count
+                blob_count += 1
 
-                    # Increment the blob count
-                    blob_count += 1
+                # Draw the contour (outline) around the blob and its centroid
+                cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+                cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
 
-                    # Draw the contour (outline) around the blob and its centroid
-                    cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
-                    cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
+                # Find the bounding rectangle of the largest contour
+                x, y, w, h = cv2.boundingRect(contour)
 
-                    # Find the bounding rectangle of the largest contour
-                    x, y, w, h = cv2.boundingRect(contour)
+                # Check if the bounding rectangle touches the edge of the frame
+                edge_touching = x == 0 or y == 0 or x + w == frame.shape[1] or y + h == frame.shape[0]
 
-                    # Check if the bounding rectangle touches the edge of the frame
-                    edge_touching = x == 0 or y == 0 or x + w == frame.shape[1] or y + h == frame.shape[0]
-
-                    if edge_touching:
-                        # Draw a red rectangle around the largest contour
-                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                        cv2.putText(frame, "Edge Touching", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                if edge_touching:
+                # Draw a red rectangle around the largest contour
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    cv2.putText(frame, "Edge Touching", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
     # Calculate the centroid of all blobs in the current frame
     if frame_blob_centroids:
@@ -122,6 +106,7 @@ while True:
                 estimated_distances.append(estimated_distance)
                 # Draw the estimated distance on the frame
                 cv2.putText(frame, f'Distance: {estimated_distance:.2f} cm', (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
+                
         # Draw the modified centroid on the frame
         cv2.circle(frame, (frame_centroid_x + int(frame.shape[1] / 2), frame_centroid_y), 3, (255, 0, 0), -1)
 
