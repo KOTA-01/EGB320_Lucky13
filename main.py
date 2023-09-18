@@ -12,9 +12,10 @@ if __name__ == "__main__":
         average_distance = info["average_distance"]
         frame_centroid_x = info["frame_centroid_x"]
         frame_centroid_y = info["frame_centroid_y"]
+        
     
 
             # Update the state machine and process state based on the information (as shown in previous response)
-        cv2.imshow(info("frame"))
+        cv2.imshow(info["frame"])
         
     vision.release_camera()  # Release the camera when done
