@@ -52,7 +52,7 @@ class Vision:
         contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Create a masked view using bitwise operation
-        masked_view = cv2.bitwise_and(frame, frame, mask=black_mask)
+        #masked_view = cv2.bitwise_and(frame, frame, mask=black_mask)
 
         # Initialize a count for substantial black blobs
         blob_count = 0
@@ -86,8 +86,8 @@ class Vision:
                     blob_count += 1
 
                     # Draw the contour (outline) around the blob and its centroid
-                    cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
-                    cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
+                    #cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+                    #cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
 
                     # Find the bounding rectangle of the largest contour
                     x, y, w, h = cv2.boundingRect(contour)
@@ -95,10 +95,10 @@ class Vision:
                     # Check if the bounding rectangle touches the edge of the frame
                     edge_touching = x == 0 or y == 0 or x + w == frame.shape[1] or y + h == frame.shape[0]
 
-                    if edge_touching:
+                    #if edge_touching:
                     # Draw a red rectangle around the largest contour
-                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                        cv2.putText(frame, "Edge Touching", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                        #cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                        #cv2.putText(frame, "Edge Touching", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         # Calculate the centroid of all blobs in the current frame
         if frame_blob_centroids:
@@ -117,26 +117,26 @@ class Vision:
                     estimated_distance = (self.known_width * self.focal_length) / blob_width
                     estimated_distances.append(estimated_distance)
                     # Draw the estimated distance on the frame
-                    cv2.putText(frame, f'Distance: {estimated_distance:.2f} cm', (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
+                    #cv2.putText(frame, f'Distance: {estimated_distance:.2f} cm', (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
                     
             # Draw the modified centroid on the frame
-            cv2.circle(frame, (frame_centroid_x + int(frame.shape[1] / 2), frame_centroid_y), 3, (255, 0, 0), -1)
+            #cv2.circle(frame, (frame_centroid_x + int(frame.shape[1] / 2), frame_centroid_y), 3, (255, 0, 0), -1)
 
             # Display the modified x, y coordinates of the average center point
-            cv2.putText(frame, f'Modified Center: ({frame_centroid_x}, {frame_centroid_y})', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
+            #cv2.putText(frame, f'Modified Center: ({frame_centroid_x}, {frame_centroid_y})', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
 
         # Display the count of detected substantial black blobs
-        cv2.putText(frame, f'Aisle Count: {blob_count}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
+        #cv2.putText(frame, f'Aisle Count: {blob_count}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
         
         # Calculate the average estimated distance for the current frame
         if estimated_distances:
             average_distance = sum(estimated_distances) / len(estimated_distances)
             # Display the average distance on the frame
-            cv2.putText(frame, f'Avg. Distance: {average_distance:.2f} cm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
+            #cv2.putText(frame, f'Avg. Distance: {average_distance:.2f} cm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
 
         # Display the camera feed and the masked view
-        cv2.imshow('Camera Feed', frame)
-        cv2.imshow('Masked View', masked_view)
+        #cv2.imshow('Camera Feed', frame)
+        #cv2.imshow('Masked View', masked_view)
 
         # Return the relevant information as a dictionary
         info = {
