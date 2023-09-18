@@ -6,6 +6,8 @@ from Read_order_class import OrderReader
 order_reader = OrderReader()
 from bayDistanceIndex import distance_from_wall
 from enum import IntEnum
+from rowdetection import RowMarkerDetector
+rowdetect = RowMarkerDetector()
 
 class robot(object):
 	def bayNav(self, bay_number):
@@ -16,8 +18,7 @@ class robot(object):
 		time.sleep(2)
 
 		while True:
-			self.UpdateObjectPositions()
-			initial_bearing = self.GetDetectedRowMarker_bearing()
+			initial_bearing = rowdetect.get_detected_row_marker_bearing()
 			
 			if not initial_bearing or abs(initial_bearing) < angular_tolerance:
 				break
@@ -28,9 +29,8 @@ class robot(object):
 
 		# 3. Drive and Adjust based on Row Marker's bearing and distance
 		while True:
-			self.UpdateObjectPositions()
-			row_marker_bearing = self.GetDetectedRowMarker_bearing()
-			current_range = self.get_detected_row_marker_range()
+			row_marker_bearing = rowdetect.get_detected_row_marker_bearing()
+			current_range = rowdetect.get_detected_row_marker_range()
 
 			# Adjust orientation based on bearing
 			if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:
@@ -70,9 +70,9 @@ class robot(object):
 				state = nav_to_bay
 
 			elif state == marker:
-				row_marker_range = self.get_detected_row_marker_range()
+				row_marker_range = rowdetect.get_detected_row_marker_range()
 				if row_marker_range is not None:
-					range_init = self.get_detected_row_marker_range()
+					range_init = rowdetect.get_detected_row_marker_range()
 					print("The range is: %0.4f" %(range_init))
 					state = nav_to_bay
 
@@ -120,20 +120,23 @@ class robot(object):
 		self.currentAisle = -1
 
 	def updatecurrentAisle(self):
-			self.SetTargetVelocities(0, -0.2)
-			while True:
-				retCode, objectsDetected, _, _, _ = coppelia.simxCallScriptFunction(
-					self.clientID, 'Robot', coppelia.sim_scripttype_childscript, 
-					'getObjectsInView', [], [], [], bytearray(), coppelia.simx_opmode_blocking
-				)
+		self.SetTargetVelocities(0, -0.2)
+		
+		while True:
+			# Get blob info from the Vision class
+			blob_info = rowdetect.vision.find_information()
 
-				if retCode == coppelia.simx_return_ok:
-					for i, position in enumerate(self.rowMarkerPositions):
-						if position is not None and objectsDetected[warehouseObjects.row_marker_1 + i]:
-							self.SetTargetVelocities(0,0)
-							self.currentAisle = i
-							print("I am in aisle %0.4f" %(i))
-							return #Exit the function
-				time.sleep(0.1)
+			if blob_info is not None:
+				blob_count = blob_info["blob_count"]
+
+				# Check blob_count to determine current aisle
+				if blob_count in [1, 2, 3]:  # Assuming aisles are represented by 1, 2, or 3 blobs respectively
+					self.SetTargetVelocities(0, 0)
+					self.currentAisle = blob_count - 1  # 0-indexed aisle number
+					print(f"I am in aisle {self.currentAisle}")
+					return  # Exit the function
+
+			time.sleep(0.1)
+
 
 	
