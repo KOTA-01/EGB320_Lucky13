@@ -1,10 +1,8 @@
 # EGB320_Lucky13
-This is a porject code repository for the EGB320 Project
-_ PICK and PACK bot _ 
+EGB320 Team 13 - PickPacker Robot Project
 
-This Project is spilt into 4 main Sub systems:
-  - Vision
-  - Mobility
-  - Navigation
-  - CLaw
-
+# Subsections
+* Navigation
+* Vision
+* Mobility
+* Collection
