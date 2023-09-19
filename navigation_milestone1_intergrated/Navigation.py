@@ -75,7 +75,7 @@ if __name__ == '__main__':
 		state = Order
 
 		# Create CoppeliaSim PackerBot object - this will attempt to open a connection to CoppeliaSim. Make sure CoppeliaSim is running.
-		warehouseBotSim = COPPELIA_WarehouseRobot('127.0.0.1', robotParameters, sceneParameters)
+		warehouseBotSim = COPPELIA_WarehouseRobot('171.20.10.7', robotParameters, sceneParameters)
 		# warehouseBotSim.SetScene()
 		warehouseBotSim.StartSimulator()
 
