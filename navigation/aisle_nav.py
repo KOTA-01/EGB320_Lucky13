@@ -25,7 +25,7 @@ class robot(object):
 				break
 			
 			angular_velocity = -0.05 if initial_bearing < 0 else 0.05
-			self.SetTargetVelocities(0, angular_velocity)
+			motor.SetTargetVelocities(0, angular_velocity)
 			time.sleep(0.1)
 
 		# 3. Drive and Adjust based on Row Marker's bearing and distance
@@ -52,7 +52,7 @@ class robot(object):
 			else:
 				linear_velocity = 0.05
 			
-			self.SetTargetVelocities(linear_velocity, angular_velocity)
+			motor.SetTargetVelocities(linear_velocity, angular_velocity)
 			time.sleep(0.1)
 
 	def run(self):
