@@ -132,7 +132,10 @@ class Vision:
                         # Estimate the distance using pixel-to-distance mapping
                         estimated_distance = self.pixel_to_distance(blob_width)
                         estimated_distances.append(estimated_distance)
-            
+            else:
+                frame_centroid_x = 0
+                frame_centroid_y = 0
+                
             # Calculate the average estimated distance for the current frame
             if estimated_distances: 
                 average_distance = sum(estimated_distances) / len(estimated_distances)
