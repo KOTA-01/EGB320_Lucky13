@@ -1,4 +1,4 @@
-from vision_module.Vision import Vision
+from vision_module.VisionPiV import Vision
 import math
 
 if __name__ == "__main__":
@@ -8,19 +8,17 @@ if __name__ == "__main__":
         info = vision.find_information()  # Find and process information
         
         blob_count = info["blob_count"]
-        print(blob_count)
         average_distance = info["average_distance"]
         frame_centroid_x = info["frame_centroid_x"]
         frame_centroid_y = info["frame_centroid_y"]
 
         # Calculate the bearing angle in radians
         bearing_rad = math.atan2(frame_centroid_x, frame_centroid_y)
-
-        # Convert radians to degrees
         bearing_deg = math.degrees(bearing_rad)
-
-        # Ensure the result is between 0 and 360 degrees
         bearing_deg = (bearing_deg + 360) % 360
                 
+        # print("Asile:", blob_count, "Distance:", average_distance)
+        # print("X/Y:", "X_",frame_centroid_x,"Y_", frame_centroid_y)
+        # print("Bearing:", bearing_deg)
         
     vision.release_camera()  # Release the camera when done
