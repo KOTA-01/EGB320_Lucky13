@@ -3,11 +3,11 @@ import numpy as np
 
 # Define color ranges
 color_ranges = {
-    'yellow': (np.array([17, 3, 130]), np.array([40, 255, 255])),
+    'yellow': (np.array([17, 3, 110]), np.array([40, 255, 255])),
     # 'black': (np.array([0, 0, 0]), np.array([179, 80, 55])),
-    'blue': (np.array([90, 92, 0]), np.array([120, 255, 255])),
-    'green': (np.array([33, 0, 102]), np.array([93, 123, 255])),
-    'red': (np.array([0, 68, 94]), np.array([10, 255, 255]))
+    'blue': (np.array([100, 92, 0]), np.array([120, 255, 255])),
+    'green': (np.array([30, 0, 55]), np.array([93, 123, 255])),
+    'red': (np.array([0, 68, 80]), np.array([10, 255, 255]))
     # Add more color ranges here if needed
 }
 
@@ -27,26 +27,22 @@ def detect_color_objects(frame, color_range, contour_color):
 
     # Apply Gaussian blur to the mask
     mask = cv2.GaussianBlur(mask, (5, 5), 0)
-
-    # # Apply morphological operations based on the color
-    # if np.array_equal(color_range[0], np.array([0, 0, 0])):
-    #     # For black color, use dilation to create a more circular look
-    #     kernel = np.ones((10, 10), np.uint8)
-    #     mask = cv2.dilate(mask, kernel, iterations=2)
-    # else:
-    #     # For blue and green, use erosion to emphasize straight lines
-    # kernel = np.ones((5, 5), np.uint8)
-    # mask = cv2.erode(mask, kernel, iterations=1)
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.erode(mask, kernel, iterations=2)
+    mask = cv2.dilate(mask, kernel, iterations=2)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Draw contour outlines with specified color
+    detected_objects = 0  # Count of detected objects
     for contour in contours:
-        if cv2.contourArea(contour) > 10000:  # Adjust this value for minimum object size
+        if cv2.contourArea(contour) > 5000:  # Adjust this value for minimum object size
             cv2.drawContours(frame, [contour], -1, contour_color, 2)
+            detected_objects += 1
 
-    return frame, mask 
+    return frame, mask, detected_objects
+
 
 # Open the camera
 cap = cv2.VideoCapture(0)  # Use 0 for the default camera, you can change it if needed
@@ -60,20 +56,25 @@ cv2.namedWindow('Red Mask')
 while True:
     # Read a frame from the camera
     ret, frame = cap.read()
-    og = frame
     if not ret:
         break
 
+    detected_objects_count = {}  # Dictionary to store the count of detected objects for each color
     # Detect objects of specific colors and get the masks
     masks = {}
     for color_name, color_range in color_ranges.items():
         contour_color = contour_colors[color_name]
-        frame, mask = detect_color_objects(frame, color_range, contour_color)
+        frame, mask, num_objects= detect_color_objects(frame, color_range, contour_color)
         masks[color_name] = mask
+        detected_objects_count[color_name] = num_objects 
+    # Display the count of detected objects in a text box
+    for idx, (color_name, count) in enumerate(detected_objects_count.items()):
+        text = f'{color_name.capitalize()}: {count}'
+        cv2.putText(frame, text, (20, 30 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
    
     # Display the frame with contour outlines
     cv2.imshow('Object Detection', frame)
-    cv2.imshow('source', og)
     # Display the masks in separate windows
     cv2.imshow('Yellow Mask', masks['yellow'])
     cv2.imshow('Blue Mask', masks['blue'])
