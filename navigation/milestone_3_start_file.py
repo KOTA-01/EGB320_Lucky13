@@ -5,9 +5,6 @@ from aisle_nav import robot
 from mobility.Motor_init import DFRobot_DC_Motor
 from mobility.Motor_init import DFRobot_DC_Motor_IIC
 from mobility.motor_control import stop
-from mobility.motor_control import Motor
-from mobility.motor_control import turn
-from mobility.motor_control import turn_indefinitly
 
 if __name__ == '__main__':
 
@@ -51,7 +48,7 @@ if __name__ == '__main__':
 
 			elif state == drop_off:
 				print("Searching for Packing bay")
-				bot.navigate_to_drop_off()
+				bot.navigate_to_packing_bay()
 				state = done
 
 			elif state == done:

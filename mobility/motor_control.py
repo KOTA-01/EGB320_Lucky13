@@ -353,9 +353,16 @@ def turn_R(t_time):
   board.motor_movement([board.M1], board.CW, 0)
   board.motor_movement([board.M2], board.CCW, 0)
 
-def turn_indefinitly():
-   board.motor_movement([board.M1], board.CCW, 50)
-   board.motor_movement([board.M2], board.CW, 50)
+def turn_indefinitely(task):
+    if task == "Right":
+        board.motor_movement([board.M1], board.CCW, 50)
+        board.motor_movement([board.M2], board.CW, 50)
+
+    if task == "Left":
+        board.motor_movement([board.M1], board.CW, 50)
+        board.motor_movement([board.M2], board.CCW, 50)
+
+
 
 
 def steering(x_dot, theta_dot):
