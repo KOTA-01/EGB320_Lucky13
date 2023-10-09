@@ -16,9 +16,9 @@ from mobility.motor_control import Motor
 from mobility.motor_control import turn
 from mobility.motor_control import turn_indefinitely
 from mobility.motor_control import steering
-from ultrasonic import UltrasonicSensor
+from ultrasonic import GroveUltrasonicRanger
 from vision_module.Vision import Vision
-ultra = UltrasonicSensor()
+ultra = GroveUltrasonicRanger()
 layout = WarehouseLayout()
 order_reader = OrderReader()
 vision = Vision()
@@ -469,7 +469,7 @@ class robot(object):
 						print("In obstacle avoidance state...")
 						Motor("Backward_40") # Drive backwards
 						time.sleep(0.1)  # Assume a 100 ms sleep duration
-						proximity = distance.get_distance()  # Update proximity
+						proximity = ultra.get_distance()  # Update proximity
 						print(f"Current proximity: {proximity}")
 					state = orient 
 
@@ -493,12 +493,12 @@ class robot(object):
 		if shelf_number % 2 == 0: # Even number shelf
 			angular_velocity = "RotateR_90" # Rotate right
 			proximity = ultra.get_distance()
-			while proximity < 0.1:
+			while proximity < 0.14:
 				proximity = ultra.get_distance()
 				Motor("Backward_40")
 		else: # odd number shelf
 			angular_velocity = "RotateL_90" # Rotate left
-			while proximity < 0.1:
+			while proximity < 0.14:
 				proximity = ultra.get_distance()
 				Motor("Backward_40")
 
