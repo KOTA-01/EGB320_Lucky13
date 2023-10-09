@@ -46,11 +46,19 @@ class robot(object):
 					while True:
 						print("initialising centre")
 						initial_bearing = rowdetect.get_detected_row_marker_bearing()
-						proximity = distance.() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
+						closest_shelf = self.getclosestshelf()
 
-						if proximity < 0.5:
-							print("repositioning to get a better entry")
-							stop() # Stop
+						if proximity < 0.2:
+							if closest_shelf:
+								print("repositioning to get a better entry")
+								stop() # Stop
+								state = reposition
+								break
+
+						if initial_bearing is None:
+							print("Marker not detected, searching...")
+							stop()
 							state = reposition
 							break
 							
@@ -68,9 +76,9 @@ class robot(object):
 					while True:
 						row_marker_bearing = rowdetect.get_detected_row_marker_bearing()
 						current_range = rowdetect.get_detected_row_marker_range()
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 
-						if proximity < 0.5:
+						if proximity < 0.2:
 							print("repositioning for entry")
 							state = reposition      
 							break   
@@ -106,15 +114,15 @@ class robot(object):
 					print(f"previous aisle: {self.previous_aisle}")
 
 					while True:
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
-						closest_shelf = self.getClosestShelf() # Find this later
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
+						closest_shelf = self.getClosestShelf() # Using this to see if there's a shelf
 						current_aisle = self.updatecurrentAisle()
 						rowMaker = rowdetect.GetDetectedRowMarker()
 						if closest_shelf:
 							if proximity <= 0.5:
 								print("In reposition state: avoiding obstacle...")
 								if current_aisle < self.previous_aisle:
-									proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+									proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 									current_aisle = self.updatecurrentAisle()
 									rowMaker = rowdetect.GetDetectedRowMarker()
 									Motor("RotateL_90") # 90 degrees Left
@@ -129,7 +137,7 @@ class robot(object):
 												
 
 								elif current_aisle > self.previous_aisle:
-									proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+									proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 									current_aisle = self.updatecurrentAisle()
 									rowMaker = rowdetect.GetDetectedRowMarker()
 									Motor("RotateR_90") # 90 degrees Right
@@ -143,7 +151,7 @@ class robot(object):
 								
 								elif current_aisle == self.previous_aisle:
 									while proximity < 0.5:
-										proximity = self.readProximity()
+										proximity = distance.get_distance()
 										current_aisle = self.updatecurrentAisle()
 										rowMaker = rowdetect.GetDetectedRowMarker()
 										Motor("Backward_40")
@@ -243,7 +251,7 @@ class robot(object):
 					while rotation_angle < 2 * math.pi:
 						rotation_angle += 0.1 * 0.3
 						detectedRowMarker = rowdetect.GetDetectedRowMarker()
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 						
 						if detectedRowMarker:
 							stop() # Find the motions to stop
@@ -269,7 +277,7 @@ class robot(object):
 						print("In orient obstacle avoidance state...")
 						Motor("Backward_40") # Find the motions to slowly reverse
 						time.sleep(0.1)  # Assume a 100 ms sleep duration
-						proximity = self.readProximity()  # Update proximity
+						proximity = distance.get_distance()  # Update proximity
 						print(f"Current proximity: {proximity}")
 					state = orient 
 				
@@ -283,7 +291,7 @@ class robot(object):
 				turn_indefinitely("Right") # Rotate 360 degrees
 				self.aligning()
 
-				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+				proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 				if proximity < 0.2:
 					state = avoid_obstacle_unseen_marker
 
@@ -299,7 +307,7 @@ class robot(object):
 				if not hasattr(self, 'previous_aisle'):
 					self.previous_aisle = current_aisle
 					print(f"previous aisle: {self.previous_aisle}")
-				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+				proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 
 				if proximity < 0.3:
 					state = avoid_obstacle_seen_marker
@@ -311,7 +319,7 @@ class robot(object):
 
 					start_time = time.time()
 					while time.time() - start_time < 3:
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 						if proximity < 0.1:
 							print("Obstacle detected whilst turning")
 							stop() # Stop
@@ -323,7 +331,7 @@ class robot(object):
 						Motor("Forwards_80") # Drive forwards
 						start_time = time.time()
 						while time.time() - start_time < 3:
-							proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+							proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 							if proximity < 0.1:
 								print("Obstacle detected while moving forward!")
 								stop() # Stop
@@ -337,7 +345,7 @@ class robot(object):
 
 					start_time = time.time()
 					while time.time() - start_time < 3:
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 						if proximity < 0.3:
 							print("Obstacle detected whilst turning")
 							stop() # Stop
@@ -349,7 +357,7 @@ class robot(object):
 						Motor("Forwards_80") # Drive forwards
 						start_time = time.time()
 						while time.time() - start_time < 3:
-							proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+							proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 							if proximity < 0.3:
 								print("Obstacle detected while moving forward!")
 								stop() # Stop
@@ -375,7 +383,7 @@ class robot(object):
 				Motor("Backward_40") # Drive backwards
 				time.sleep(2)
 
-				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+				proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 				if proximity >= 0.2:
 					print("Safe distance, looking for row marker")
 					state = orient
@@ -387,7 +395,7 @@ class robot(object):
 				print("Object in the way, navigating around...")
 				stop() # Stop
 				detected_shelf = self.getClosestShelf() # Find this later
-				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+				proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 				
 				if detected_shelf:
 					if current_aisle < aisle:
@@ -404,12 +412,12 @@ class robot(object):
 						print("In obstacle avoidance state...")
 						Motor("Backward_40") # Drive backwards
 						time.sleep(0.1)  # Assume a 100 ms sleep duration
-						proximity = self.readProximity()  # Update proximity
+						proximity = distance.get_distance()  # Update proximity
 						print(f"Current proximity: {proximity}")
 					state = orient 
 
 
-				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+				proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 				if proximity >= 0.3:
 					print("Safe distance, looking for row marker")
 					Motor("Forward_40") # Drive forwards
@@ -490,7 +498,7 @@ class robot(object):
 
 		# Stage 2: Drive straight towards the packing bay
 		while True:
-			proximity = self.readProximity()
+			proximity = distance.get_distance()
 			packing_bay_rb = self.GetDetectedPackingBay()
 			if not packing_bay_rb:
 				print("Lost sight of the packing bay while driving towards it!")
@@ -528,7 +536,7 @@ class robot(object):
 		# 3. Drive and Adjust based on Row Marker's bearing and distance
 		while True:
 			row_marker_bearing = self.GetDetectedRowMarker_bearing()
-			current_range = self.readProximity # connect to the ultrasonic
+			current_range = distance.get_distance() # connect to the ultrasonic
 
 			# Adjust orientation based on bearing
 			if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:

@@ -1,10 +1,9 @@
-
 import time
 from itemIndex import item_to_index
 from Read_order_class import OrderReader
-from aisle_nav import robot
+from integrated_test import robot
 from mobility.Motor_init import DFRobot_DC_Motor
-from mobility.Motor_init import DFRobot_DC_Motor_IIC
+from mobility.Motor_init import DFRobot_DC_Motor_IIC # Jacob please check if this is how we initialise the motors and such
 from mobility.motor_control import stop
 from mobility.motor_control import Motor
 from mobility.motor_control import turn
@@ -35,11 +34,11 @@ if __name__ == '__main__':
 				order_data = order_reader.ReadOrder("Order_1.csv")
 				print(order_data)
 				print("RED LED - I am searching for the item!")
-				state = drive
-			
-			elif state == drive:
-				bot.nav_to_aisle()
 				state = aisleNav
+			
+			# elif state == drive:
+			# 	bot.nav_to_aisle()
+			# 	state = aisleNav
 
 			elif state == aisleNav:
 				bot.run()
@@ -48,12 +47,12 @@ if __name__ == '__main__':
 			elif state == exit_aisle:
 				print("Exiting aisle")
 				bot.exiting()
-				state = drop_off
-
-			elif state == drop_off:
-				print("Searching for Packing bay")
-				bot.navigate_to_drop_off()
 				state = done
+
+			# elif state == drop_off:
+			# 	print("Searching for Packing bay")
+			# 	bot.navigate_to_drop_off()
+			# 	state = done
 
 			elif state == done:
 				print("Completed :3")
