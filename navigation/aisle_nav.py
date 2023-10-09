@@ -22,6 +22,7 @@ from mobility.motor_control import steering
 
 #change
 class robot(object):
+
 	def bayNav(self, bay_number):
 			target_distance = distance_from_wall(bay_number)
 			linear_tolerance = 0.02
