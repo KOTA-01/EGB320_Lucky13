@@ -9,14 +9,18 @@ color_ranges = {
     'yellow': (np.array([13, 0, 60]), np.array([40, 255, 255])),
     'blue': (np.array([100, 92, 0]), np.array([120, 255, 255])),
     'green': (np.array([30, 0, 15]), np.array([74, 123, 255])),
-    'red': (np.array([0, 0, 44]), np.array([10, 255, 255]))
+    'orange': (np.array([0, 0, 44]), np.array([10, 255, 255])),
+    'black': (np.array([0, 0, 44]), np.array([10, 255, 255])),
+    'wall': (np.array([0, 0, 44]), np.array([10, 255, 255]))
 }
 
 contour_colors = {
     'yellow': (255, 255, 0),
     'blue': (255, 0, 0),
-    'green': (0, 255, 0),
-    'red': (0, 0, 255)
+    'green': (0, 128, 0),
+    'orange': (255, 200, 0),
+    'black': (0, 0, 0),
+    'wall': (128, 0, 128)
 }
 
 def detect_color_objects(frame, color_range, contour_color, color_name):
@@ -48,10 +52,26 @@ def detect_color_objects(frame, color_range, contour_color, color_name):
                 cY = int(M["m01"] / M["m00"])
                 center_points.append((cX, cY))
 
-                if color_name == 'red':
+                if color_name == 'black':
                     rect = cv2.minAreaRect(contour)
                     width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
-                    estimated_distance = pixel_to_distance(width)
+                    estimated_distance = black_pixel_to_distance(width)
+                    estimated_distances.append(estimated_distance)
+                    estimated_distance_text = f'Distance: {estimated_distance:.2f}'
+                    cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
+
+                # if color_name == 'orange':
+                #     rect = cv2.minAreaRect(contour)
+                #     width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                #     estimated_distance = orange_pixel_to_distance(width)
+                #     estimated_distances.append(estimated_distance)
+                #     estimated_distance_text = f'Distance: {estimated_distance:.2f}'
+                #     cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
+
+                if color_name == 'green':
+                    rect = cv2.minAreaRect(contour)
+                    width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                    estimated_distance = green_pixel_to_distance(width)
                     estimated_distances.append(estimated_distance)
                     estimated_distance_text = f'Distance: {estimated_distance:.2f}'
                     cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
@@ -61,12 +81,27 @@ def detect_color_objects(frame, color_range, contour_color, color_name):
 def main():
     # Initialize the camera and other variables
     cap = cv2.VideoCapture(0)
-    # Simulated data: Distance (in cm) and corresponding pixel counts (For Red)
-    distances = [15, 20, 25, 30]
-    pixel_width = [441, 335, 271, 232]
-    coefficients = np.polyfit(pixel_width, distances, 2)
-    global pixel_to_distance
-    pixel_to_distance = np.poly1d(coefficients)
+
+    # Simulated data: Distance (in cm) and corresponding pixel counts (For Black)
+    black_distances = [15, 20, 25, 30]
+    black_pixel_width = [441, 335, 271, 232]
+    black_coefficients = np.polyfit(black_pixel_width, black_distances, 2)
+    global black_pixel_to_distance
+    black_pixel_to_distance = np.poly1d(black_coefficients)
+
+    # # Simulated data: Distance (in cm) and corresponding pixel counts (For Orange)
+    # orange_distances = [15, 20, 25, 30]
+    # orange_pixel_width = [441, 335, 271, 232]
+    # orange_coefficients = np.polyfit(orange_pixel_width, orange_distances, 2)
+    # global orange_pixel_to_distance
+    # orange_pixel_to_distance = np.poly1d(orange_coefficients)
+
+    # Simulated data: Distance (in cm) and corresponding pixel counts (For Green)
+    green_distances = [15, 20, 25, 30]
+    green_pixel_width = [441, 335, 271, 232]
+    green_coefficients = np.polyfit(green_pixel_width, green_distances, 2)
+    global green_pixel_to_distance
+    green_pixel_to_distance = np.poly1d(green_coefficients)
 
     while True:
         ret, frame = cap.read()
@@ -98,7 +133,9 @@ def main():
         cv2.imshow('Yellow Mask', masks['yellow'])
         cv2.imshow('Blue Mask', masks['blue'])
         cv2.imshow('Green Mask', masks['green'])
-        cv2.imshow('Red Mask', masks['red'])
+        cv2.imshow('Orange Mask', masks['orange'])
+        cv2.imshow('Black Mask', masks['black'])
+        cv2.imshow('Wall Mask', masks['wall'])
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
