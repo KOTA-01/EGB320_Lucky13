@@ -17,8 +17,10 @@ from mobility.Motor_init import DFRobot_DC_Motor_IIC
 from mobility.motor_control import stop
 from mobility.motor_control import Motor
 from mobility.motor_control import turn
-from mobility.motor_control import turn_indefinitly
+from mobility.motor_control import turn_indefinitely
 from mobility.motor_control import steering
+from ultrasonic import UltrasonicSensor
+distance = UltrasonicSensor()
 
 #change
 class robot(object):
@@ -44,7 +46,7 @@ class robot(object):
 					while True:
 						print("initialising centre")
 						initial_bearing = rowdetect.get_detected_row_marker_bearing()
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = distance.() # Get the ranges from the ultrasonic sensor
 
 						if proximity < 0.5:
 							print("repositioning to get a better entry")
@@ -118,7 +120,7 @@ class robot(object):
 									Motor("RotateL_90") # 90 degrees Left
 									steering(0.08, 0)
 									time.sleep(2) # Find the motions needed forwards slow
-									turn_indefinitly("Right")
+									turn_indefinitely("Right")
 
 									if rowMaker:
 										stop() 
@@ -133,7 +135,7 @@ class robot(object):
 									Motor("RotateR_90") # 90 degrees Right
 									steering(0.08, 0)
 									time.sleep(2) # Find the motions needed forwards slow
-									turn_indefinitly("Left")
+									turn_indefinitely("Left")
 									if rowMaker:
 										stop  # Find the motions needed stop
 										state = initialise
@@ -236,7 +238,7 @@ class robot(object):
 		while True:
 			if state == orient:
 				rotation_angle = 0
-				turn_indefinitly("Left") # rotate 360 degrees
+				turn_indefinitely("Left") # rotate 360 degrees
 				try: 
 					while rotation_angle < 2 * math.pi:
 						rotation_angle += 0.1 * 0.3
@@ -278,7 +280,7 @@ class robot(object):
 				stop() # Stop
 				print("unable to find row marker")
 				time.sleep(2)
-				turn_indefinitly("Right") # Rotate 360 degrees
+				turn_indefinitely("Right") # Rotate 360 degrees
 				self.aligning()
 
 				proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
@@ -448,7 +450,7 @@ class robot(object):
 				stop()  # Stop rotating
 				break
 			else:
-				turn_indefinitly("Left")  # Rotate until detected
+				turn_indefinitely("Left")  # Rotate until detected
 			time.sleep(0.1)
 
 		# Stage 2: Align with Rightmost Edge
@@ -458,7 +460,7 @@ class robot(object):
 				stop()  # Stop rotating once out of view
 				break
 			else:
-				turn_indefinitly("Right")  # Rotate in the opposite direction
+				turn_indefinitely("Right")  # Rotate in the opposite direction
 			time.sleep(0.1)
 					
 
@@ -470,7 +472,7 @@ class robot(object):
 
 			packing_bay_rb = self.GetDetectedPackingBay()
 			if not packing_bay_rb:
-				turn_indefinitly("Right")  # Rotate if the packing bay is not in view
+				turn_indefinitely("Right")  # Rotate if the packing bay is not in view
 				continue
 
 			_range, _bearing = packing_bay_rb
@@ -554,7 +556,7 @@ class robot(object):
 		self.currentAisle = -1
 
 	def updatecurrentAisle(self):
-		turn_indefinitly("Left") # rotate 360 degrees until marker is seen
+		turn_indefinitely("Left") # rotate 360 degrees until marker is seen
 		
 		while True:
 			# Get blob info from the Vision class

@@ -19,6 +19,12 @@ from mobility.motor_control import Motor
 from mobility.motor_control import turn
 from mobility.motor_control import turn_indefinitly
 from mobility.motor_control import steering
+from ultrasonic import UltrasonicSensor
+
+TRIG = 26
+ECHO = 19
+
+sensor = UltrasonicSensor(TRIG, ECHO)
 
 class robot(object):
 
@@ -43,7 +49,7 @@ class robot(object):
 					while True:
 						print("initialising centre")
 						initial_bearing = rowdetect.get_detected_row_marker_bearing()
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = sensor.get_distance() # Get the ranges from the ultrasonic sensor
 
 						if proximity < 0.5:
 							print("repositioning to get a better entry")
@@ -65,7 +71,7 @@ class robot(object):
 					while True:
 						row_marker_bearing = rowdetect.get_detected_row_marker_bearing()
 						current_range = rowdetect.get_detected_row_marker_range()
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+						proximity = sensor.get_distance() # Get the ranges from the ultrasonic sensor
 
 						if proximity < 0.5:
 							print("repositioning for entry")
@@ -84,7 +90,7 @@ class robot(object):
 
 						# If we are within the acceptable range of the bay, stop
 						if target_distance - linear_tolerance <= current_range <= target_distance + linear_tolerance:
-							steering(0, 0) # Find the motions needed stop
+							stop() # Find the motions needed stop
 							state = complete
 							break
 
@@ -103,15 +109,15 @@ class robot(object):
 					print(f"previous aisle: {self.previous_aisle}")
 
 					while True:
-						proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
-						closest_shelf = self.getClosestShelf() # Find this later
+						proximity = sensor.get_distance() # Get the ranges from the ultrasonic sensor
+						closest_shelf = self.getClosestShelf() # Return if shelf is present in view
 						current_aisle = self.updatecurrentAisle()
 						rowMaker = rowdetect.GetDetectedRowMarker()
 						if closest_shelf:
 							if proximity <= 0.5:
 								print("In reposition state: avoiding obstacle...")
 								if current_aisle < self.previous_aisle:
-									proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+									proximity = sensor.get_distance() # Get the ranges from the ultrasonic sensor
 									current_aisle = self.updatecurrentAisle()
 									rowMaker = rowdetect.GetDetectedRowMarker()
 									Motor("RotateL_90") # 90 degrees Left
@@ -126,7 +132,7 @@ class robot(object):
 												
 
 								elif current_aisle > self.previous_aisle:
-									proximity = self.readProximity() # Get the ranges from the ultrasonic sensor
+									proximity = sensor.get_distance() # Get the ranges from the ultrasonic sensor
 									current_aisle = self.updatecurrentAisle()
 									rowMaker = rowdetect.GetDetectedRowMarker()
 									Motor("RotateR_90") # 90 degrees Right
@@ -140,7 +146,7 @@ class robot(object):
 								
 								elif current_aisle == self.previous_aisle:
 									while proximity < 0.5:
-										proximity = self.readProximity()
+										proximity = sensor.get_distance()
 										current_aisle = self.updatecurrentAisle()
 										rowMaker = rowdetect.GetDetectedRowMarker()
 										Motor("Backward_40")
@@ -175,8 +181,9 @@ class robot(object):
 			elif state == marker:
 				row_marker_range = rowdetect.get_detected_row_marker_range()
 				if row_marker_range is not None:
-					range_init = rowdetect.get_detected_row_marker_range()
-					print("The range is: %0.4f" %(range_init))
+					range_ultrasonic = sensor.get_distance()
+					range_camera = rowdetect.get_detected_row_marker_range()
+					print("The range is: %0.4f, %0.4f" %(range_ultrasonic), (range_camera))
 
 
 					state = nav_to_bay
@@ -214,3 +221,23 @@ class robot(object):
 			elif state == done:
 				print("item picked up!")
 				break
+
+	def initAisle(self):
+		self.currentAisle = -1
+	
+	def updatecurrentAisle(self):
+			turn_indefinitly()
+			while True:
+				retCode, objectsDetected, _, _, _ = coppelia.simxCallScriptFunction(
+					self.clientID, 'Robot', coppelia.sim_scripttype_childscript, 
+					'getObjectsInView', [], [], [], bytearray(), coppelia.simx_opmode_blocking
+				)
+
+				if retCode == coppelia.simx_return_ok:
+					for i, position in enumerate(self.rowMarkerPositions):
+						if position is not None and objectsDetected[warehouseObjects.row_marker_1 + i]:
+							stop()
+							self.currentAisle = i
+							print("I am in aisle %0.4f" %(i))
+							return i #Exit the function
+				time.sleep(0.1)

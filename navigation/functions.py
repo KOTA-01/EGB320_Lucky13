@@ -17,7 +17,7 @@ from mobility.Motor_init import DFRobot_DC_Motor_IIC
 from mobility.motor_control import stop
 from mobility.motor_control import Motor
 from mobility.motor_control import turn
-from mobility.motor_control import turn_indefinitly
+from mobility.motor_control import turn_indefinitely
 from mobility.motor_control import steering
 
 class techniques(object):
@@ -105,7 +105,7 @@ class techniques(object):
 	def reverse_until_clear(self, proximity):
 		while proximity < 0.5:
 			proximity = self.readProximity()
-			self.Motor("Backward_40")
+			Motor("Backward_40")
 			if proximity >= 0.5:
 				return 'initialise'
 		return 'reposition'

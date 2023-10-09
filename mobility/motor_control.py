@@ -122,7 +122,7 @@ def stop():
   board.motor_movement([board.M1], board.CW, 0)
   board.motor_movement([board.M2], board.CW, 0)
 
-stop_time = 5
+stop_time = 30
 timer = threading.Timer(stop_time, stop)
 timer.start()
 
@@ -167,85 +167,85 @@ def Motor(Task):
      
   # Rotate
   if Task == "RotateR_30":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*1/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_60":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*2/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_90":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_120":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*4/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_150":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*5/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_180":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*2)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_210":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*7/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_240":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*8/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_270":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_300":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*10/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_330":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(0.82*11/3)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
      
   if Task == "RotateR_360":
-     board.motor_movement([board.M1], board.CCW, 100)
-     board.motor_movement([board.M2], board.CW, 100)
+     board.motor_movement([board.M1], board.CCW, 50)
+     board.motor_movement([board.M2], board.CW, 50)
      time.sleep(3.5)
      board.motor_movement([board.M1], board.CCW, 0)
      board.motor_movement([board.M2], board.CW, 0)
@@ -255,113 +255,108 @@ def Motor(Task):
      
      
   if Task == "RotateL_30":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*1/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_60":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*2/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_90":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_120":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*4/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_150":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*5/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_180":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*2)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_210":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*7/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_240":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*8/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_270":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_300":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*10/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_330":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(0.82*11/3)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
      
   if Task == "RotateL_360":
-     board.motor_movement([board.M1], board.CW, 100)
-     board.motor_movement([board.M2], board.CCW, 100)
+     board.motor_movement([board.M1], board.CW, 50)
+     board.motor_movement([board.M2], board.CCW, 50)
      time.sleep(3.5)
      board.motor_movement([board.M1], board.CW, 0)
      board.motor_movement([board.M2], board.CCW, 0)
 
 
-def turn(t_time, direction):
-  if direction == "Left":
-    board.motor_movement([board.M1], board.CW, 100)
-    board.motor_movement([board.M2], board.CCW, 100)
-    time.sleep(t_time)
-    board.motor_movement([board.M1], board.CW, 0)
-    board.motor_movement([board.M2], board.CCW, 0)
+def turn_L(t_time):
+  board.motor_movement([board.M1], board.CW, 50)
+  board.motor_movement([board.M2], board.CCW, 50)
+  time.sleep(t_time)
+  board.motor_movement([board.M1], board.CW, 0)
+  board.motor_movement([board.M2], board.CCW, 0)
+  
+def turn_R(t_time):
+  board.motor_movement([board.M1], board.CCW, 50)
+  board.motor_movement([board.M2], board.CW, 50)
+  time.sleep(t_time)
+  board.motor_movement([board.M1], board.CW, 0)
+  board.motor_movement([board.M2], board.CCW, 0)
 
-  if direction == "Right":
-    board.motor_movement([board.M1], board.CCW, 100)
-    board.motor_movement([board.M2], board.CW, 100)
-    time.sleep(t_time)
-    board.motor_movement([board.M1], board.CW, 0)
-    board.motor_movement([board.M2], board.CCW, 0)
+def turn_indefinitly():
+   board.motor_movement([board.M1], board.CCW, 50)
+   board.motor_movement([board.M2], board.CW, 50)
 
-def turn_indefinitly(direction):
-  if direction == "Left":
-    board.motor_movement([board.M1], board.CW, 100)
-    board.motor_movement([board.M2], board.CCW, 100)
-
-  if direction == "Right":
-    board.motor_movement([board.M1], board.CCW, 100)
-    board.motor_movement([board.M2], board.CW, 100)
 
 def steering(x_dot, theta_dot):
   wheelbase = 0.35
@@ -384,12 +379,10 @@ def steering(x_dot, theta_dot):
       upper = max(LWS_rpm, RWS_rpm)
       LWS_rpm = LWS_rpm/upper * 99
       RWS_rpm = RWS_rpm/upper * 99
-    
   
   print(LWS_rpm)
   print(RWS_rpm)
-  
-  # calculate % to send to each motor
+
   
   # send power to motors
   # Forward
@@ -411,9 +404,14 @@ def steering(x_dot, theta_dot):
   if LWS_rpm > 0 and RWS_rpm < 0:
     board.motor_movement([board.M1], board.CCW, abs(LWS_rpm))
     board.motor_movement([board.M2], board.CW, abs(RWS_rpm))
+    
+
+    
 
 
+    
+    
 
-
-
+  
+  
 
