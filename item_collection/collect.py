@@ -11,9 +11,9 @@ class Collection:
         GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
         GPIO.setup(23, GPIO.OUT)
         GPIO.setup(24, GPIO.OUT)
-        GPIO.setup(27, GPIO.IN)  # Define GPIO pin 27 as an input
-        GPIO.setup(17, GPIO.IN)  # Define GPIO pin 17 as an input
-        GPIO.setup(17, GPIO.IN)  # Define GPIO pin 17 as an input
+        GPIO.setup(27, GPIO.IN)  # Define GPIO pin 27 as an input (top limit)
+        GPIO.setup(17, GPIO.IN)  # Define GPIO pin 17 as an input (bottom limit)
+        GPIO.setup(22, GPIO.IN)  # Define GPIO pin 22 as an input (hori limit)
 
         # Set PWM frequencies as 50Hz
         self.pVert = GPIO.PWM(23, 50)
