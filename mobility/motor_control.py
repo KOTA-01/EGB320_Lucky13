@@ -363,6 +363,55 @@ def turn_indefinitly(direction):
     board.motor_movement([board.M1], board.CCW, 100)
     board.motor_movement([board.M2], board.CW, 100)
 
+def steering(x_dot, theta_dot):
+  wheelbase = 0.35
+  wheelradius = 0.0175
+    
+  
+  # wheel speed in rad/s
+  LWS = (x_dot - 0.5*theta_dot*wheelbase)/(wheelradius)
+  RWS = (x_dot + 0.5*theta_dot*wheelbase)/(wheelradius)
+  
+  print(LWS)
+  print(RWS)
+  
+  # convert to rpm
+  LWS_rpm = LWS * 9.5492968
+  RWS_rpm = RWS * 9.5492968
+  
+  # scale to be less than 100
+  if LWS_rpm > 100 or RWS_rpm > 100:
+      upper = max(LWS_rpm, RWS_rpm)
+      LWS_rpm = LWS_rpm/upper * 99
+      RWS_rpm = RWS_rpm/upper * 99
+    
+  
+  print(LWS_rpm)
+  print(RWS_rpm)
+  
+  # calculate % to send to each motor
+  
+  # send power to motors
+  # Forward
+  if LWS_rpm > 0 and RWS_rpm > 0:
+    board.motor_movement([board.M1], board.CCW, abs(LWS_rpm))
+    board.motor_movement([board.M2], board.CCW, abs(RWS_rpm))
+    
+  # Backward
+  if LWS_rpm < 0 and RWS_rpm < 0:
+    board.motor_movement([board.M1], board.CW, abs(LWS_rpm))
+    board.motor_movement([board.M2], board.CW, abs(RWS_rpm))
+    
+  # Left
+  if LWS_rpm < 0 and RWS_rpm > 0:
+    board.motor_movement([board.M1], board.CW, abs(LWS_rpm))
+    board.motor_movement([board.M2], board.CCW, abs(RWS_rpm))
+    
+  # Right
+  if LWS_rpm > 0 and RWS_rpm < 0:
+    board.motor_movement([board.M1], board.CCW, abs(LWS_rpm))
+    board.motor_movement([board.M2], board.CW, abs(RWS_rpm))
+
 
 
 
