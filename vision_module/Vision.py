@@ -1,158 +1,152 @@
-# import time
-# if __name__ == '__main__':
-#     Frequency = 25 #Hz
-#     Interval = 1.0/Frequency
-#     # execute control rate loop
-#     # very simple main robot loop
-#     while True:
-#         print('Executing Loop')
-#         now = time.time() # get the time
-#         #do all processing here
-#         elapsed = time.time() - now # how long was it running?
-#         time.sleep(Interval-elapsed) # wait for amount of time left from interval
-#         ## this is not needed but good for debugging rate
-#         elapsed2 = time.time() - now
-#         rate2 = 1.0/elapsed2
-#         print("Processing Rate after sleep is: {}.".format(rate2))
-    
 import cv2
 import numpy as np
+import time
 
 class Vision:
-    def __init__(self):
-        # Set camera properties
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 308)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 410)
+    def __init__(self) :
+        # Set camera Properties
+        # self.cap = picamera2.Picamera2()  
+        # self.config = self.cap.create_video_configuration(main={"format":'XRGB8888',"size":(1640,1232)})
+        # self.cap.configure(self.config)
+        # self.cap.start()
 
-        # Define lower and upper bounds for Black color in HSV
-        self.lower_bound = np.array([0, 0, 0])
-        self.upper_bound = np.array([179, 255, 50])
+        # self.cap = cv2.VideoCapture(0)
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 308)
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 410)
+        # Constants
+        self.MIN_CONTOUR_AREA_THRESHOLD = 5000
+        # Libs
+        self.detected_objects_count = {}
+        self.masks = {}
+        self.center_points_dict = {}
 
-        # Camera calibration parameters (adjust as needed)
-        self.focal_length = 500  # Focal length in pixels
-        self.known_width = 10.0  # Known width of a black blob in centimeters
+# Color Ranges and Contour Colors (As in the original code)
+color_ranges = {
+    'yellow': (np.array([13, 0, 60]), np.array([40, 255, 255])),
+    'blue': (np.array([100, 92, 0]), np.array([120, 255, 255])),
+    'green': (np.array([30, 0, 15]), np.array([74, 123, 255])),
+    'orange': (np.array([0, 0, 44]), np.array([10, 255, 255])),
+    'black': (np.array([0, 0, 44]), np.array([10, 255, 255])),
+    'wall': (np.array([0, 0, 44]), np.array([10, 255, 255]))
+}
 
-        # Initialize variables for calculating the center point of blobs
-        self.all_blob_centroids = []
-
-    def find_information(self):
-        # Capture a frame from the camera
-        ret, frame = self.cap.read()
-        if not ret:
-            return None
-
-        # Convert the frame to HSV color space
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # Create a mask for the black color
-        black_mask = cv2.inRange(hsv_frame, self.lower_bound, self.upper_bound)
-
-        # Find contours in the mask
-        contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Create a masked view using bitwise operation
-        #masked_view = cv2.bitwise_and(frame, frame, mask=black_mask)
-
-        # Initialize a count for substantial black blobs
-        blob_count = 0
-
-        # Initialize a list to store the centroids of blobs in the current frame
-        frame_blob_centroids = []
-        
-        # Initialize an empty list to store estimated distances for the current frame
-        estimated_distances = []
+contour_colors = {
+    'yellow': (255, 255, 0),
+    'blue': (255, 0, 0),
+    'green': (0, 128, 0),
+    'orange': (255, 200, 0),
+    'black': (0, 0, 0),
+    'wall': (128, 0, 128)
+}
     
-        # Iterate through the detected contours
-        for contour in contours:
-            # Calculate the area of the contour
-            area = cv2.contourArea(contour)
-            # Define a threshold for considering a contour as a substantial blob
-            min_blob_area = 1000  # Adjust this threshold as needed
+def detect_color_objects(self, frame, color_range, contour_color, color_name):
+    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv_frame, color_range[0], color_range[1])
 
-            # Define a threshold for considering a contour as a substantial circular blob
-            if area >= min_blob_area:
-                # Find the centroid (center) of the current contour
-                M = cv2.moments(contour)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    centroid = (cx, cy)
+    # Preprocess the mask
+    mask = cv2.GaussianBlur(mask, (5, 5), 0)
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.erode(mask, kernel, iterations=2)
+    mask = cv2.dilate(mask, kernel, iterations=2)
 
-                    # Append the centroid to the list of centroids for this frame
-                    frame_blob_centroids.append(centroid)
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                    # Increment the blob count
-                    blob_count += 1
+    # Draw contour outlines and calculate center points
+    detected_objects = 0
+    center_points = []
+    estimated_distances = []
 
-                    # Draw the contour (outline) around the blob and its centroid
-                    #cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
-                    #cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
+    for contour in contours:
+        if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
+            cv2.drawContours(frame, [contour], -1, contour_color, 2)
+            detected_objects += 1
 
-                    # Find the bounding rectangle of the largest contour
-                    x, y, w, h = cv2.boundingRect(contour)
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                center_points.append((cX, cY))
 
-                    # Check if the bounding rectangle touches the edge of the frame
-                    edge_touching = x == 0 or y == 0 or x + w == frame.shape[1] or y + h == frame.shape[0]
-
-                    #if edge_touching:
-                    # Draw a red rectangle around the largest contour
-                        #cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                        #cv2.putText(frame, "Edge Touching", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-        # Calculate the centroid of all blobs in the current frame
-        if frame_blob_centroids:
-            frame_centroid_x = int(np.mean([cx for (cx, cy) in frame_blob_centroids]) - (frame.shape[1] / 2))
-            frame_centroid_y = int(np.mean([cy for (cx, cy) in frame_blob_centroids]))
-        else:
-            frame_centroid_x = 0
-            frame_centroid_y = 0
-
-            # Calculate and display the estimated distance for each blob
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area >= min_blob_area:
-                    # Calculate blob width
-                    x, y, w, h = cv2.boundingRect(contour)
-                    blob_width = w
-
-                    # Calculate estimated distance
-                    estimated_distance = (self.known_width * self.focal_length) / blob_width
+                if color_name == 'black':
+                    rect = cv2.minAreaRect(contour)
+                    width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                    estimated_distance = black_pixel_to_distance(width)
                     estimated_distances.append(estimated_distance)
-                    # Draw the estimated distance on the frame
-                    #cv2.putText(frame, f'Distance: {estimated_distance:.2f} cm', (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
-                    
-            # Draw the modified centroid on the frame
-            #cv2.circle(frame, (frame_centroid_x + int(frame.shape[1] / 2), frame_centroid_y), 3, (255, 0, 0), -1)
+                    estimated_distance_text = f'Distance: {estimated_distance:.2f}'
+                    cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
 
-            # Display the modified x, y coordinates of the average center point
-            #cv2.putText(frame, f'Modified Center: ({frame_centroid_x}, {frame_centroid_y})', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
+                if color_name == 'green':
+                    rect = cv2.minAreaRect(contour)
+                    width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                    estimated_distance = green_pixel_to_distance(width)
+                    estimated_distances.append(estimated_distance)
+                    estimated_distance_text = f'Distance: {estimated_distance:.2f}'
+                    cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
 
-        # Display the count of detected substantial black blobs
-        #cv2.putText(frame, f'Aisle Count: {blob_count}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 2)
-        
-        # Calculate the average estimated distance for the current frame
-        if estimated_distances:
-            average_distance = sum(estimated_distances) / len(estimated_distances)
-        else:
-            average_distance = 0
-            # Display the average distance on the frame
-            #cv2.putText(frame, f'Avg. Distance: {average_distance:.2f} cm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 2)
+    return frame, mask, detected_objects, center_points
 
-        # Display the camera feed and the masked view
-        cv2.imshow('Camera Feed', frame)
-        #cv2.imshow('Masked View', masked_view)
+def visualize(frame, masks):
+    cv2.imshow('Object Detection', frame)
+    cv2.imshow('Yellow Mask', masks['yellow'])
+    cv2.imshow('Blue Mask', masks['blue'])
+    cv2.imshow('Green Mask', masks['green'])
+    cv2.imshow('Orange Mask', masks['orange'])
+    cv2.imshow('Black Mask', masks['black'])
+    cv2.imshow('Wall Mask', masks['wall'])
 
-        # Return the relevant information as a dictionary
-        info = {
-            "blob_count": blob_count,
-            "average_distance": average_distance,
-            "frame_centroid_x": frame_centroid_x,
-            "frame_centroid_y": frame_centroid_y,
-            'frame': (frame)
-        }
-        return info
+def distance():    
+    # Simulated data: Distance (in cm) and corresponding pixel counts (For Black)
+    black_distances = [15, 20, 25, 30]
+    black_pixel_width = [441, 335, 271, 232]
+    black_coefficients = np.polyfit(black_pixel_width, black_distances, 2)
+    global black_pixel_to_distance
+    black_pixel_to_distance = np.poly1d(black_coefficients)
 
-    def release_camera(self):
-        # Release the camera
-        self.cap.release()
+    # Simulated data: Distance (in cm) and corresponding pixel counts (For Green)
+    green_distances = [15, 20, 25, 30]
+    green_pixel_width = [441, 335, 271, 232]
+    green_coefficients = np.polyfit(green_pixel_width, green_distances, 2)
+    global green_pixel_to_distance
+    green_pixel_to_distance = np.poly1d(green_coefficients)
+
+
+def find_infomation(self):
+    # Initialize the camera and other variables
+    cap = cv2.VideoCapture(0)
+
+    distance()
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        for color_name, color_range in color_ranges.items():
+            contour_color = contour_colors[color_name]
+            frame, mask, num_objects, center_points = detect_color_objects(frame, color_range, contour_color, color_name)
+            self.masks[color_name] = mask
+            self.detected_objects_count[color_name] = num_objects
+            self.center_points_dict[color_name] = center_points
+
+        for idx, (color_name, count) in enumerate(self.detected_objects_count.items()):
+            text = f'{color_name.capitalize()}: {count}'
+            cv2.putText(frame, text, (20, 30 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+        for color_name, center_points in self.center_points_dict.items():
+            for cX, cY in center_points:
+                text = f'({frame.shape[1] // 2 - cX})'
+                cv2.circle(frame, (cX, cY), 5, contour_colors[color_name], -1)
+                cv2.putText(frame, text, (cX + 10, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_colors[color_name], 2)
+
+        visualize(frame, self.masks)
+       
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+def release_camera(self):
+    self.cap.release()
