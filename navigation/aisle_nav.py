@@ -662,17 +662,12 @@ class robot(object):
 		
 		while True:
 			# Get blob info from the Vision class
-			blob_info = vision.find_information()
-
-			if blob_info is not None:
-				blob_count = blob_info["blob_count"]
-
-				# Check blob_count to determine current aisle
-				if blob_count in [1, 2, 3]:  # Assuming aisles are represented by 1, 2, or 3 blobs respectively
-					stop()
-					self.currentAisle = blob_count - 1  # 0-indexed aisle number
-					print(f"I am in aisle {self.currentAisle}")
-					return  # Exit the function
+			data = vision.find_infomation()
+			for info in data:
+				color_name, bearing, distance, aisle = info
+				if color_name == 'black':
+					current_aisle = aisle  # converting to float before converting to radians
+					print(f"Bearing for black object: {aisle} radians")
 
 			time.sleep(0.1)
 
