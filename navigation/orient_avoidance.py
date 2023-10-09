@@ -1,0 +1,2 @@
+class ObstacleDetectedException(Exception):
+	pass
