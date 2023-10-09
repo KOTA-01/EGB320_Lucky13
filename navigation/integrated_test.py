@@ -222,6 +222,69 @@ class robot(object):
 				print("item picked up!")
 				break
 
+	def exiting(self):
+		current_order = order_reader.ReadOrder("Order_1.csv")
+		shelf_number = int(current_order["shelf"])
+		if shelf_number % 2 == 0: # Even number shelf
+			angular_velocity = "RotateR_90" # Rotate right
+		else: # odd number shelf
+			angular_velocity = "RotateL_90" # Rotate left
+
+		while True:
+			initial_bearing = rowdetect.get_detected_row_marker_bearing()
+
+			if initial_bearing is not None:
+				break
+
+			steering(0, angular_velocity)
+			time.sleep(0.1)
+
+		stop() # Stop
+		self.exitnav()
+
+	def exitnav(self):
+		target_distance = 1.1  # Distance you want to be from the row marker
+		linear_tolerance = 0.02
+		angular_tolerance = 0.05
+		time.sleep(2)
+
+		while True:
+			initial_bearing = self.GetDetectedRowMarker_bearing() # row marker bearing
+			
+			if not initial_bearing or abs(initial_bearing) < angular_tolerance:
+				break
+			
+			angular_velocity = -0.05 if initial_bearing < 0 else 0.05
+			steering(0, angular_velocity)
+			time.sleep(0.1)
+
+		# 3. Drive and Adjust based on Row Marker's bearing and distance
+		while True:
+			row_marker_bearing = self.GetDetectedRowMarker_bearing()
+			current_range = sensor.get_distance() # connect to the ultrasonic
+
+			# Adjust orientation based on bearing
+			if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:
+				angular_velocity = -0.05 if row_marker_bearing < 0 else 0.05
+			else:
+				angular_velocity = 0
+
+			# If we are within the acceptable range of the bay, stop
+			if abs(current_range - target_distance) <= linear_tolerance:
+				stop()
+				break
+
+			# If we are further than the target distance from the row marker, move backward
+			elif current_range < target_distance:
+				linear_velocity = -0.05  # Negative to move backward
+
+			# Otherwise, stop (should not really get here with the above conditions, but just in case)
+			else:
+				linear_velocity = 0
+			
+			steering(linear_velocity, angular_velocity)
+			time.sleep(0.1)
+
 	def initAisle(self):
 		self.currentAisle = -1
 	

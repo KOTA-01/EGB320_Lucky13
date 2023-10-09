@@ -46,7 +46,7 @@ class robot(object):
 					while True:
 						print("initialising centre")
 						initial_bearing = rowdetect.get_detected_row_marker_bearing()
-						proximity = distance.() # Get the ranges from the ultrasonic sensor
+						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 
 						if proximity < 0.5:
 							print("repositioning to get a better entry")
