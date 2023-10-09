@@ -3,7 +3,6 @@ import numpy as np
 # from picamera2 import Picamera2
 # from libcamera import controls
 import time
-
 class Vision:
     def __init__(self) :
         # #Set camera Properties
@@ -25,8 +24,6 @@ class Vision:
         self.masks = {}
         self.center_points_dict = {}
 
-
-    #Note need to be chnaged
     color_ranges = {
         'wall': (np.array([39, 0, 0]), np.array([162, 255, 255])),
         'yellow': (np.array([9, 85, 0]), np.array([19  , 255, 255])),
@@ -46,11 +43,6 @@ class Vision:
         'black': (0, 0, 0)
         
     }
-
-
-
-
-    
 
     def detect_color_objects(self, frame, color_range, contour_color, color_name):
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -75,8 +67,8 @@ class Vision:
         detected_objects = 0
         center_points = []
         estimated_distances = []
-        # Initialize variables for average top position calculation
         top_positions = []
+        estimated_distance = 0  # Default value
 
         for contour in contours:
             if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
@@ -100,7 +92,6 @@ class Vision:
                             # Show Y-coordinate numbers on the Y-axis
                             cv2.putText(frame, str(top_point[1]), (10, top_point[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
 
-
                 M = cv2.moments(contour)
                 if M["m00"] != 0:
                     cX = int(M["m10"] / M["m00"])
@@ -114,16 +105,17 @@ class Vision:
                         estimated_distances.append(estimated_distance)
                         estimated_distance_text = f'Distance: {estimated_distance:.2f}'
                         cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
-
-                    if color_name == 'green':
+                    elif color_name == 'green':
                         rect = cv2.minAreaRect(contour)
                         width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
                         estimated_distance = self.green_pixel_to_distance(width)
                         estimated_distances.append(estimated_distance)
                         estimated_distance_text = f'Distance: {estimated_distance:.2f}'
                         cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
+                    else: 
+                        estimated_distance = 0
 
-        return frame, mask, detected_objects, center_points
+        return frame, mask, detected_objects, center_points, estimated_distance
 
     def visualize(self, frame, masks):
         cv2.imshow('Object Detection', frame)
@@ -153,38 +145,43 @@ class Vision:
             ret, frame = self.cap.read()
             if not ret:
                 break
-
+            formatted_info = []
             for color_name, color_range in self.color_ranges.items():
                 contour_color = self.contour_colors[color_name]
-                frame, mask, num_objects, center_points = self.detect_color_objects(frame, color_range, contour_color, color_name)
+                frame, mask, num_objects, center_points, estimated_distance = self.detect_color_objects(frame, color_range, contour_color, color_name)
                 self.masks[color_name] = mask
                 self.detected_objects_count[color_name] = num_objects
                 self.center_points_dict[color_name] = center_points
-
-            for idx, (color_name, count) in enumerate(self.detected_objects_count.items()):
-                text = f'{color_name.capitalize()}: {count}'
-                cv2.putText(frame, text, (20, 30 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
-            for color_name, center_points in self.center_points_dict.items():
                 for cX, cY in center_points:
-                    text = f'({frame.shape[1] // 2 - cX})'
-                    cv2.circle(frame, (cX, cY), 5, self.contour_colors[color_name], -1)
-                    cv2.putText(frame, text, (cX + 10, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.contour_colors[color_name], 2)
+                        text = f'({frame.shape[1] // 2 - cX})'
+                        cv2.circle(frame, (cX, cY), 5, self.contour_colors[color_name], -1)
+                        cv2.putText(frame, text, (cX + 10, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.contour_colors[color_name], 2)
+                formatted_info.append(f"({color_name}, {text}_degrees, {estimated_distance:.2f}cm)")         
 
-        
+            # for idx, (color_name, count) in enumerate(self.detected_objects_count.items()):
+            #     text = f'{color_name.capitalize()}: {count}'
+            #     cv2.putText(frame, text, (20, 30 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+            # for color_name, center_points in self.center_points_dict.items():
+            #     for cX, cY in center_points:
+            #         text = f'({frame.shape[1] // 2 - cX})'
+            #         cv2.circle(frame, (cX, cY), 5, self.contour_colors[color_name], -1)
+            #         cv2.putText(frame, text, (cX + 10, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.contour_colors[color_name], 2)
+
             self.visualize(frame, self.masks)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        self.cap.release()
-        cv2.destroyAllWindows()
+            return formatted_info
 
     def release_camera(self):
         self.cap.release()
+        cv2.destroyAllWindows()    
 
 if __name__ == "__main__":
     vision = Vision()
-    vision.find_infomation()
+    while True:
+        data = vision.find_infomation()
+        for info in data:                     
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            print(info)   
     vision.release_camera()
 
