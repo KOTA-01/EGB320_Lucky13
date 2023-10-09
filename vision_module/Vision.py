@@ -10,7 +10,7 @@ class Vision:
         # self.cap.configure(self.config)
         # self.cap.start()
 
-        # self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(0)
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 308)
         # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 410)
         # Constants
@@ -20,7 +20,6 @@ class Vision:
         self.masks = {}
         self.center_points_dict = {}
 
-# Color Ranges and Contour Colors (As in the original code)
 color_ranges = {
     'yellow': (np.array([13, 0, 60]), np.array([40, 255, 255])),
     'blue': (np.array([100, 92, 0]), np.array([120, 255, 255])),
@@ -110,15 +109,11 @@ def distance():
     global green_pixel_to_distance
     green_pixel_to_distance = np.poly1d(green_coefficients)
 
-
 def find_infomation(self):
-    # Initialize the camera and other variables
-    cap = cv2.VideoCapture(0)
-
     distance()
 
     while True:
-        ret, frame = cap.read()
+        ret, frame = self.cap.read()
         if not ret:
             break
 
@@ -145,8 +140,14 @@ def find_infomation(self):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
+    self.cap.release()
     cv2.destroyAllWindows()
 
 def release_camera(self):
     self.cap.release()
+
+if __name__ == "__main__":
+    vision = Vision()
+    vision.find_infomation()
+    vision.release_camera()
+
