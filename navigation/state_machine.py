@@ -3,6 +3,12 @@ import time
 from itemIndex import item_to_index
 from Read_order_class import OrderReader
 from aisle_nav import robot
+from mobility.Motor_init import DFRobot_DC_Motor
+from mobility.Motor_init import DFRobot_DC_Motor_IIC
+from mobility.motor_control import stop
+from mobility.motor_control import Motor
+from mobility.motor_control import turn
+from mobility.motor_control import turn_indefinitly
 
 if __name__ == '__main__':
 
@@ -10,6 +16,8 @@ if __name__ == '__main__':
 	# In the exception catch code attempt to Stop the CoppeliaSim so don't have to Stop it manually when pressing CTRL+C
 	try:
 
+		DFRobot_DC_Motor()
+		DFRobot_DC_Motor_IIC(DFRobot_DC_Motor)
 		order_reader = OrderReader()
 		bot = robot()
 		# State machine initialization
@@ -49,8 +57,8 @@ if __name__ == '__main__':
 
 			elif state == done:
 				print("Completed :3")
-				self.SetTargetVelocities(0, 0)
+				stop()
 				break
 
 	except KeyboardInterrupt as e:
-		motor.SetTargetVelocities(0, 0)
+		stop()
