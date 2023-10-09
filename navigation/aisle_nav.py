@@ -257,16 +257,16 @@ class robot(object):
 
 				if shelf_number % 2 == 0: # Even number shelf so left
 					Motor("RotateL_90")
-					# proximity = ultra.get_distance()
-					# while proximity > 0.1:
-					# 	proximity = ultra.get_distance()
-					# 	Motor("Forward_40")
+					proximity = ultra.get_distance()
+					while proximity > 0.1:
+						proximity = ultra.get_distance()
+						Motor("Forward_40")
 				else: # odd number shelf so right
 					Motor("RotateR_90")
-					# proximity = ultra.get_distance()
-					# while proximity > 0.1:
-					# 	proximity = ultra.get_distance()
-					# 	Motor("Forward_40")
+					proximity = ultra.get_distance()
+					while proximity > 0.1:
+						proximity = ultra.get_distance()
+						Motor("Forward_40")
 					
 				print("YELLOW LED - Picking up item ...")
 				time.sleep(5) # Picking the item (Primo adjusts this)
@@ -492,8 +492,15 @@ class robot(object):
 		shelf_number = int(current_order["shelf"])
 		if shelf_number % 2 == 0: # Even number shelf
 			angular_velocity = "RotateR_90" # Rotate right
+			proximity = ultra.get_distance()
+			while proximity < 0.1:
+				proximity = ultra.get_distance()
+				Motor("Backward_40")
 		else: # odd number shelf
 			angular_velocity = "RotateL_90" # Rotate left
+			while proximity < 0.1:
+				proximity = ultra.get_distance()
+				Motor("Backward_40")
 
 		while True:
 			data = vision.find_infomation()
