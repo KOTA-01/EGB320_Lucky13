@@ -47,10 +47,18 @@ class robot(object):
 						print("initialising centre")
 						initial_bearing = rowdetect.get_detected_row_marker_bearing()
 						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
+						closest_shelf = self.getclosestshelf()
 
-						if proximity < 0.5:
-							print("repositioning to get a better entry")
-							stop() # Stop
+						if proximity < 0.2:
+							if closest_shelf:
+								print("repositioning to get a better entry")
+								stop() # Stop
+								state = reposition
+								break
+
+						if initial_bearing is None:
+							print("Marker not detected, searching...")
+							stop()
 							state = reposition
 							break
 							
@@ -70,7 +78,7 @@ class robot(object):
 						current_range = rowdetect.get_detected_row_marker_range()
 						proximity = distance.get_distance() # Get the ranges from the ultrasonic sensor
 
-						if proximity < 0.5:
+						if proximity < 0.2:
 							print("repositioning for entry")
 							state = reposition      
 							break   
