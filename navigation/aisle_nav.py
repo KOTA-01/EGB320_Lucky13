@@ -1,3 +1,4 @@
+from __future__ import print_function
 import time
 import cv2
 import numpy as np
@@ -22,6 +23,63 @@ ultra = GroveUltrasonicRanger()
 layout = WarehouseLayout()
 order_reader = OrderReader()
 vision = Vision()
+
+
+import sys
+import os
+sys.path.append("../")
+
+import time
+
+from DFRobot_RaspberryPi_DC_Motor import THIS_BOARD_TYPE, DFRobot_DC_Motor_IIC as Board
+
+if THIS_BOARD_TYPE:
+  board = Board(1, 0x10)    # RaspberryPi select bus 1, set address to 0x10
+else:
+  board = Board(7, 0x10)    # RockPi select bus 7, set address to 0x10
+
+def board_detect():
+  l = board.detecte()
+  print("Board list conform:")
+  print(l)
+
+''' print last operate status, users can use this variable to determine the result of a function call. '''
+def print_board_status():
+  if board.last_operate_status == board.STA_OK:
+    print("board status: everything ok")
+  elif board.last_operate_status == board.STA_ERR:
+    print("board status: unexpected error")
+  elif board.last_operate_status == board.STA_ERR_DEVICE_NOT_DETECTED:
+    print("board status: device not detected")
+  elif board.last_operate_status == board.STA_ERR_PARAMETER:
+    print("board status: parameter error, last operate no effective")
+  elif board.last_operate_status == board.STA_ERR_SOFT_VERSION:
+    print("board status: unsupport board framware version")
+
+if __name__ == "__main__":
+
+  board_detect()    # If you forget address you had set, use this to detected them, must have class instance
+
+  # Set board controler address, use it carefully, reboot module to make it effective
+  '''
+  board.set_addr(0x10)
+  if board.last_operate_status != board.STA_OK:
+    print("set board address faild")
+  else:
+    print("set board address success")
+  '''
+
+  while board.begin() != board.STA_OK:    # Board begin and check board status
+    print_board_status()
+    print("board begin faild")
+    time.sleep(2)
+  print("board begin success")
+
+  board.set_encoder_enable(board.ALL)                 # Set selected DC motor encoder enable
+  # board.set_encoder_disable(board.ALL)              # Set selected DC motor encoder disable
+  board.set_encoder_reduction_ratio(board.ALL, 43)    # Set selected DC motor encoder reduction ratio, test motor reduction ratio is 43.8
+
+  board.set_moter_pwm_frequency(1000)   # Set DC motor pwm frequency to 1000HZ
 
 
 #change
@@ -476,9 +534,12 @@ class robot(object):
                     Motor("RotateL_90")
                 else: # odd number shelf so right
                     Motor("RotateR_90")
+
+                shelfheight = int(current_order["height"])
+                print("Go to shelf: %0.4f" %(shelfheight))    
                     
                 print("YELLOW LED - Picking up item ...")
-                time.sleep(5) # Picking the item (Primo adjusts this)
+                Primos.function(shelfheight)
                 state = done
             
             elif state == done:
@@ -491,15 +552,8 @@ class robot(object):
         shelf_number = int(current_order["shelf"])
         if shelf_number % 2 == 0: # Even number shelf
             angular_velocity = "RotateR_90" # Rotate right
-            proximity = ultra.get_distance()
-            while proximity < 0.14:
-                proximity = ultra.get_distance()
-                Motor("Backward_40")
         else: # odd number shelf
             angular_velocity = "RotateL_90" # Rotate left
-            while proximity < 0.14:
-                proximity = ultra.get_distance()
-                Motor("Backward_40")
 
         while True:
             data = vision.find_infomation()
@@ -552,7 +606,7 @@ class robot(object):
 
     def navigate_to_packing_bay(self):
         angular_tolerance = 0.1
-        safe_stopping_distance = 0.02
+        safe_stopping_distance = 0.03
         # Stage 1: Rotate until the packing bay is centered
         while True:
 
