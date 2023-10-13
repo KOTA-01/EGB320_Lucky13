@@ -19,6 +19,8 @@ from mobility.motor_control import turn_indefinitely
 from mobility.motor_control import steering
 from ultrasonic import GroveUltrasonicRanger
 from vision_module.Vision import Vision
+from item_collection.collection01 import Collection
+collect = Collection()
 ultra = GroveUltrasonicRanger()
 layout = WarehouseLayout()
 order_reader = OrderReader()
@@ -539,7 +541,7 @@ class robot(object):
                 print("Go to shelf: %0.4f" %(shelfheight))    
                     
                 print("YELLOW LED - Picking up item ...")
-                Primos.function(shelfheight)
+                collect.Upack()
                 state = done
             
             elif state == done:

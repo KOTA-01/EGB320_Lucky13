@@ -107,9 +107,9 @@ class Collection:
 
 if __name__ == '__main__':
     GPIO.cleanup()
-    claw = Collection()
-    #claw.Upack()
+    #claw = Collection()
+    claw.Upack()
     #claw.Deliver()
-    claw.Debug()
+    #claw.Debug()
     
 
