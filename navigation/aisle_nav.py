@@ -381,61 +381,34 @@ class robot(object):
 
 					while True:
 						data = vision.find_infomation()
-						for info in data:
-							color_name, bearing, distance = info
-							if color_name == 'black':
-								rowmarker = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-								print(f"Bearing for rowmarker: {initial_bearing} radians")
-							if color_name == 'blue':
-								closest_shelf = vision.detected_objects_count('blue')
-						proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
+						rowmarker, closest_shelf = self.get_bearing_and_shelf(data, 'black'), self.get_bearing_and_shelf(data, 'blue')[1]
+						proximity = ultra.get_distance
+
+						if rowmarker:
+							rowmarker = self.degrees_to_radians(rowmarker)
+							print(f"bearing for rowmaker: {rowmarker} radians")
+
+						proximity = ultra.get_distance()
 						current_aisle = self.updatecurrentAisle()
-						if closest_shelf:
-							if proximity <= 0.5:
-								print("In reposition state: avoiding obstacle...")
 
-								if current_aisle < self.previous_aisle:
-									proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-									current_aisle = self.updatecurrentAisle()
-									Motor("RotateL_90") # 90 degrees Left
-									steering(0.08, 0)
-									time.sleep(2) # Find the motions needed forwards slow
-									turn_indefinitely("Right")
-
-									if rowmarker:
-										stop() 
-										state = initialise
-										break
+						color_data = {color_name: (float(bearing), float(distance)) for color_name, bearing, distance in data}
+						if 'green' in color_data and color_data['green'][1] < 0.2:
+							peepee	
+						
+						if closest_shelf and proximity <= 0.5:
+							print("In reposition state: avoiding obstacle...")
+							if current_aisle < self.previous_aisle:
+								self.navigate("RotateL_90", "Right", rowmarker)
+							elif current_aisle > self.previous_aisle:
+								self.navigate("RotateR_90", "Left", rowmarker)
+							elif current_aisle == self.previous_aisle:
+								self.navigate_backward_until_clear(proximity)
+							else:
+								state = initialise
+						else:
+		   					state = initialise
 												
-
-								elif current_aisle > self.previous_aisle:
-									proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-									current_aisle = self.updatecurrentAisle()
-									rowMaker = vision.detected_objects_count('black')
-									Motor("RotateR_90") # 90 degrees Right
-									steering(0.08, 0)
-									time.sleep(2) # Find the motions needed forwards slow
-									turn_indefinitely("Left")
-
-									if rowMaker:
-										stop  # Find the motions needed stop
-										state = initialise
-										break
 								
-								elif current_aisle == self.previous_aisle:
-									while proximity < 0.5:
-										proximity = ultra.get_distance()
-										current_aisle = self.updatecurrentAisle()
-										rowMaker = vision.detected_objects_count('black')
-										Motor("Backward_40")
-										if proximity >= 0.5:
-											state = initialise
-											break
-												
-								else:
-									state = initialise
-									break
-
 				elif state == complete:
 					print("I'm at the bay")
 					time.sleep(2)
@@ -699,5 +672,23 @@ class robot(object):
 
 			time.sleep(0.1)
 
+	def get_bearing_and_shelf(self, data, color_target):
+		for color_name, bearing, _ in data:
+			if color_name == color_target:
+				return float(bearing), vision.detected_objects_count(color_target)
+		return None, None
 
+	def navigate(turn_direction, after_turn_direction, rowmarker):
+		Motor(turn_direction)
+		steering(0.08, 0)
+		time.sleep(2)
+		turn_indefinitely(after_turn_direction)
+
+			
+	def navigate_backward_until_clear(proximity):
+		while proximity < 0.5:
+			proximity = ultra.get_distance()
+			Motor("Backward_40")
+			if proximity >= 0.5:
+				return 'initialise'
 	
