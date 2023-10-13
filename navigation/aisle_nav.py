@@ -84,17 +84,33 @@ class robot(object):
 			elif state == orient_obstacle_avoidance:
 				data = vision.find_infomation()
 				for info in data:
-					color_name, bearing, distance = info
-					if color_name == 'blue':
+					color_data = {color_name: (float(bearing), float(distance)) for color_name, bearing, distance in data}
+
+					if 'green' in color_data and color_data['green'][1] < 0.2:
+						obstacle_bearing = color_data['green'][0]
+
+					elif 'blue' in color_data and proximity < 0.2:
 						closest_shelf = vision.detected_objects_count('blue')
+					
 				if closest_shelf:
-					while proximity <= 0.2:
-						print("In orient obstacle avoidance state...")
-						Motor("Backward_40") # Find the motions to slowly reverse
-						time.sleep(0.1)  # Assume a 100 ms sleep duration
-						proximity = ultra.get_distance()  # Update proximity
-						print(f"Current proximity: {proximity}")
-					state = orient 
+					Motor("RotateR_180")
+					if 'green' in color_data and color_data['green'][1] < 0.2:
+						obstacle_bearing = color_data['green'][0]
+						time.sleep(1)
+						if obstacle_bearing < 0:
+							turn_indefinitely("Right")
+						else:
+							turn_indefinitely("Left")
+						
+						Motor("Forward_40")
+						time.sleep(1)
+						state = orient
+
+					else:
+						Motor("Forward_40")
+						time.sleep(3)
+						stop()
+						state = orient 
 				
 				else:
 					state = orient
@@ -105,6 +121,14 @@ class robot(object):
 				time.sleep(2)
 				turn_indefinitely("Right") # Rotate 360 degrees
 				self.aligning()
+
+
+				data = vision.find_infomation()
+				for info in data:
+					color_data = {color_name: (float(bearing), float(distance)) for color_name, bearing, distance in data}
+
+					if 'green' in color_data and color_data['green'][1] < 0.2:
+						state = avoid_obstacle_unseen_marker
 
 				proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
 				if proximity < 0.2:
@@ -132,53 +156,45 @@ class robot(object):
 					print("The aisle destination is to the right of me")
 					Motor("RotateR_90") # Rotate 90 degrees to the right
 
+					Motor("Forwards_60") # Drive forwards
 					start_time = time.time()
 					while time.time() - start_time < 3:
+						data = vision.find_infomation()
 						proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-						if proximity < 0.1:
-							print("Obstacle detected whilst turning")
+						for info in data:
+							color_data = {color_name: (float(bearing), float(distance)) for color_name, bearing, distance in data}
+							if 'green' in color_data and color_data['green'][1] < 0.2:
+								state = avoid_obstacle_seen_marker
+
+						if proximity < 0.2:
+							print("Obstacle detected while moving forward!")
 							stop() # Stop
 							state = avoid_obstacle_seen_marker
 							break
-						time.sleep(0.1)
 
-					if state != avoid_obstacle_seen_marker:
-						Motor("Forwards_80") # Drive forwards
-						start_time = time.time()
-						while time.time() - start_time < 3:
-							proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-							if proximity < 0.1:
-								print("Obstacle detected while moving forward!")
-								stop() # Stop
-								state = avoid_obstacle_seen_marker
-								break
-							time.sleep(0.1)
+						time.sleep(0.1)
 
 				elif current_aisle > aisle:
 					print("The aisle destination is to the left of me")
 					Motor("RotateL_90") # Rotate 90 degrees to the left
 
+					Motor("Forwards_60") # Drive forwards
 					start_time = time.time()
 					while time.time() - start_time < 3:
+						data = vision.find_infomation()
 						proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-						if proximity < 0.3:
-							print("Obstacle detected whilst turning")
+						for info in data:
+							color_data = {color_name: (float(bearing), float(distance)) for color_name, bearing, distance in data}
+							if 'green' in color_data and color_data['green'][1] < 0.2:
+								state = avoid_obstacle_seen_marker
+
+						if proximity < 0.2:
+							print("Obstacle detected while moving forward!")
 							stop() # Stop
 							state = avoid_obstacle_seen_marker
 							break
-						time.sleep(0.1)
 
-					if state != avoid_obstacle_seen_marker:
-						Motor("Forwards_80") # Drive forwards
-						start_time = time.time()
-						while time.time() - start_time < 3:
-							proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
-							if proximity < 0.3:
-								print("Obstacle detected while moving forward!")
-								stop() # Stop
-								state = avoid_obstacle_seen_marker
-								break
-							time.sleep(0.1)
+						time.sleep(0.1)
 						
 				elif current_aisle == aisle:
 					print("I'm in the right aisle!")
@@ -312,8 +328,7 @@ class robot(object):
 				elif state == adjust:
 					# 3. Drive and Adjust based on Row Marker's bearing and distance
 					while True:
-						for info in data:
-							data = vision.find_infomation()
+						data = vision.find_infomation()
 						for info in data:
 							color_name, bearing, distance = info
 							if color_name == 'black':
@@ -331,8 +346,7 @@ class robot(object):
 
 				elif state == drive:
 					while True:
-						for info in data:
-							data = vision.find_infomation()
+						data = vision.find_infomation()
 						for info in data:
 							color_name, bearing, distance = info
 							if color_name == 'black':
@@ -343,21 +357,21 @@ class robot(object):
 						if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:
 							angular_velocity = -0.05 if row_marker_bearing < 0 else 0.05 # Find the average velocity for theta
 						else:
-							angular_velocity = 0 # Find the motions needed stop
+							angular_velocity = 0 
 
 						# If we are within the acceptable range of the bay, stop
 						if target_distance - linear_tolerance <= current_range <= target_distance + linear_tolerance:
-							steering(0, 0) # Find the motions needed stop
+							stop() # Find the motions needed stop
 							state = complete
 							break
 
 						# If we pass the bay (i.e., too close to the end marker), reverse
 						elif current_range < target_distance - linear_tolerance:
-							linear_velocity = -0.08 # Find the motions needed backwards slow
+							linear_velocity = -0.04 # Find the motions needed backwards slow
 
 						# Otherwise, drive forward towards the bay
 						else:
-							linear_velocity = 0.08 # Find the motions needed forward slow
+							linear_velocity = 0.04 # Find the motions needed forward slow
 						
 						steering(linear_velocity, angular_velocity)
 						time.sleep(0.1)
@@ -371,7 +385,7 @@ class robot(object):
 							color_name, bearing, distance = info
 							if color_name == 'black':
 								rowmarker = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-								print(f"Bearing for black object: {initial_bearing} radians")
+								print(f"Bearing for rowmarker: {initial_bearing} radians")
 							if color_name == 'blue':
 								closest_shelf = vision.detected_objects_count('blue')
 						proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
@@ -679,8 +693,9 @@ class robot(object):
 			for info in data:
 				color_name, bearing, distance, aisle = info
 				if color_name == 'black':
-					current_aisle = aisle  # converting to float before converting to radians
+					i = aisle
 					print(f"Bearing for black object: {aisle} radians")
+					return i
 
 			time.sleep(0.1)
 
