@@ -31,7 +31,7 @@ if __name__ == '__main__':
 				order_data = order_reader.ReadOrder("Order_1.csv")
 				print(order_data)
 				print("RED LED - I am searching for the item!")
-				state = drive
+				state = aisleNav
 			
 			elif state == drive:
 				bot.nav_to_aisle()
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 			elif state == exit_aisle:
 				print("Exiting aisle")
 				bot.exiting()
-				state = drop_off
+				state = done
 
 			elif state == drop_off:
 				print("Searching for Packing bay")
