@@ -24,21 +24,23 @@ class Vision:
         self.center_points_dict = {}
 
     color_ranges = {
-        #'wall': (np.array([39, 0, 0]), np.array([162, 255, 255])),
+        'wall': (np.array([39, 0, 0]), np.array([162, 255, 255])),
         'yellow': (np.array([9, 85, 0]), np.array([19  , 255, 255])),
-        'blue': (np.array([39, 0, 0]), np.array([162, 255, 255])),
+        #'blue': (np.array([39, 0, 0]), np.array([162, 255, 255])),
         'green': (np.array([33, 0, 0]), np.array([94, 255, 255])),
         'orange': (np.array([0, 0, 157]), np.array([11, 255, 255])),
         'black': (np.array([0, 0, 43]), np.array([179, 55, 109]))
+        
     }
 
     contour_colors = {
-        #'wall': (128, 0, 128),
+        'wall': (128, 0, 128),
         'yellow': (255, 255, 0),
-        'blue': (255, 0, 0),
+        #'blue': (255, 0, 0),
         'green': (0, 128, 0),
         'orange': (255, 200, 0),
-        'black': (0, 0, 0)        
+        'black': (0, 0, 0)
+        
     }
 
     def detect_color_objects(self, frame, color_range, contour_color, color_name):
@@ -71,6 +73,23 @@ class Vision:
             if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
                 cv2.drawContours(frame, [contour], -1, contour_color, 2)
                 detected_objects += 1
+
+                if color_name == 'wall':
+                    # Get the topmost point of the contour
+                    top_point = tuple(contour[contour[:, :, 1].argmin()][0])
+                    # Check if the top point falls within the specified x-range
+                    if (frame.shape[1] // 3) <= top_point[0] <= ((frame.shape[1] // 3) * 2):
+                        if top_point[1] < (frame.shape[0] // 2):
+                            top_positions.append(top_point[1])  # Y-coordinate
+
+                            # Draw a circle at the top point
+                            cv2.circle(frame, top_point, 5, contour_color, -1)
+
+                            # Draw a line across the top point, always across the x-axis
+                            cv2.line(frame, (0, top_point[1]), (frame.shape[1], top_point[1]), contour_color, 1)
+
+                            # Show Y-coordinate numbers on the Y-axis
+                            cv2.putText(frame, str(top_point[1]), (10, top_point[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
 
                 M = cv2.moments(contour)
                 if M["m00"] != 0:
@@ -154,25 +173,6 @@ class Vision:
     def release_camera(self):
         self.cap.release()
         cv2.destroyAllWindows()    
-
-    def Test():
-        return True
-    
-    def CheckPeople():
-        return True
-
-    def Asile():
-        return True
-
-    def Shelves():
-        return True
-
-    def PackZone():
-        return True
-
-    # def Object():
-    #     return True
-
 
 if __name__ == "__main__":
     vision = Vision()
