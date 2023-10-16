@@ -5,13 +5,12 @@ import numpy as np
 import time
 class Vision:
     def __init__(self) :
-        # #Set camera Properties
+        # Set camera Properties
         # self.cap = Picamera2()  
+        # self.
         # self.config = self.cap.create_video_configuration(main={"format":'XRGB8888',"size":(1640,1232)})
         # self.cap.configure(self.config)
-        # self.cap.align_configuration(self.config)
-        # self.cap.configure(self.config)
-        # self.cap.set_controls({"AwbEnable": False, "ExposureTime": 1000, "AnalogueGain": 2.0})
+        # self.cap.set_controls({"AwbEnable": False})
         # self.cap.start()
 
         self.cap = cv2.VideoCapture(0)
