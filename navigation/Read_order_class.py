@@ -19,6 +19,8 @@ class OrderReader:
                     Height = row[3]
                     Item = row[4]
 
+                    self.current_order_index +=1
+
                     return{
                         "item number": ItemNumber,
                         "shelf": Shelf,
@@ -28,3 +30,7 @@ class OrderReader:
                     }
         print("All orders processed or invalid order index")
         return None
+    
+    def next_order(self, filename):
+        return self.ReadOrder(filename)
+        
