@@ -160,6 +160,8 @@ if __name__ == "__main__":
 
 vision_data = []
 
+current_order = order_reader.ReadOrder("Order_1.csv")
+
 #change
 
 class robot(object):
@@ -199,10 +201,6 @@ class robot(object):
 
 
         state = orient
-
-
-
-        current_order = order_reader.ReadOrder("Order_1.csv")
 
         shelf_number = current_order["shelf"]
 
@@ -990,8 +988,6 @@ class robot(object):
 
                 try:
 
-                    current_order = order_reader.ReadOrder("Order_1.csv")
-
                     if current_order:
 
                         bay_number = int(current_order["bay"])
@@ -1066,8 +1062,6 @@ class robot(object):
 
     def exiting(self):
 
-        current_order = order_reader.ReadOrder("Order_1.csv")
-
         shelf_number = int(current_order["shelf"])
 
         if shelf_number % 2 == 0: # Even number shelf
@@ -1116,19 +1110,15 @@ class robot(object):
 
         while True:
 
-            data = vision.find_information()
-
             packing_bay_rb = None
 
-            for info in data:
+            yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
 
-                yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
+            if yellow_success:
 
-                if yellow_success:
+                packing_bay_rb = self.degrees_to_radians(float(yellow_bearing))  # converting to float before converting to radians
 
-                    packing_bay_rb = self.degrees_to_radians(float(yellow_bearing))  # converting to float before converting to radians
-
-                    print(f"Bearing for yellow object: {packing_bay_rb} radians")
+                print(f"Bearing for yellow object: {packing_bay_rb} radians")
 
             if packing_bay_rb:
 
@@ -1269,6 +1259,10 @@ class robot(object):
             time.sleep(0.1)
 
 
+    def reset(self):
+
+        Motor("RotateR_180")
+
 
     def exitnav(self):
 
@@ -1377,28 +1371,36 @@ class robot(object):
 
 
     def updatecurrentAisle(self):
-        turn_indefinitely("Left")  # rotate 360 degrees until marker is seen
+        turn_indefinitely("Left")  # start rotating
+
+        first_bearing = None
+        bearings_seen = set()  # to collect bearings of the dots seen
 
         while True:
-            success, Dots_detected, AvgBearing, AvgDistance = self.Asile()
+            success, _, AvgBearing, _ = self.Asile()
 
             if success:
-                stop()  # stop rotating
+                # If first_bearing isn't set, set it to the first detected bearing
+                if first_bearing is None:
+                    first_bearing = AvgBearing
 
-                # Print the detected data
-                print(f"Number of black dots detected: {Dots_detected}.")
-                print(f"Bearing for black object: {AvgBearing} radians. Distance: {AvgDistance} units.")
+                # If we've seen this bearing (approximately, given some threshold), stop rotating
+                elif abs(first_bearing - AvgBearing) < 0.05:
+                    stop()
+                    Dots_detected = len(bearings_seen)  # count the unique dots based on bearings
 
-                # Return the aisle based on the number of dots detected
-                if Dots_detected == 1:
-                    print("You're in Aisle 1.")
-                    return Dots_detected, "0"
-                elif Dots_detected == 2:
-                    print("You're in Aisle 2.")
-                    return Dots_detected, "1"
-                elif Dots_detected == 3:
-                    print("You're in Aisle 3.")
-                    return Dots_detected, "2"
+                    # Return the aisle based on the number of dots detected
+                    if Dots_detected == 1:
+                        print("You're in Aisle 1.")
+                        return Dots_detected, "0"
+                    elif Dots_detected == 2:
+                        print("You're in Aisle 2.")
+                        return Dots_detected, "1"
+                    elif Dots_detected == 3:
+                        print("You're in Aisle 3.")
+                        return Dots_detected, "2"
+
+                bearings_seen.add(AvgBearing)
 
             time.sleep(0.1)
 

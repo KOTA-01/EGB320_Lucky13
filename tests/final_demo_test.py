@@ -58,10 +58,10 @@ if __name__ == "__main__":
 import time
 from navigation.itemIndex import item_to_index
 from navigation.Read_order_class import OrderReader
-from navigation.aisle_nav import robot
-from mobility.Motor_init import DFRobot_DC_Motor
-from mobility.Motor_init import DFRobot_DC_Motor_IIC
-from mobility.motor_control import stop
+from navigation.final_Nav import robot
+from Motor_init import DFRobot_DC_Motor
+from Motor_init import DFRobot_DC_Motor_IIC
+from Motor_Task import stop
 
 if __name__ == '__main__':
 
@@ -69,8 +69,6 @@ if __name__ == '__main__':
 		# In the exception catch code attempt to Stop the CoppeliaSim so don't have to Stop it manually when pressing CTRL+C
 		try:
 
-				DFRobot_DC_Motor()
-				DFRobot_DC_Motor_IIC(DFRobot_DC_Motor)
 				order_reader = OrderReader()
 				bot = robot()
 				# State machine initialization
@@ -89,7 +87,8 @@ if __name__ == '__main__':
 								order_data = order_reader.ReadOrder("Order_1.csv")
 								print(order_data)
 								print("RED LED - I am searching for the item!")
-								state = aisleNav
+								state = aisleNav # Ive set it as immediate to aisle nav just to test its capabilities to drive down the aisle
+												 # Set it back to drive if you want full order list
 						
 						elif state == drive:
 								bot.nav_to_aisle()
@@ -115,10 +114,12 @@ if __name__ == '__main__':
 								completed_orders += 1
 
 								if completed_orders >= 3:
-										print(f"{completed_orders} orders processed, stopping.")
-										break
+									print(f"{completed_orders} orders processed, stopping.")
+									break
 
-								state = order
+								else:
+									bot.reset()
+									state = order
 
 		except KeyboardInterrupt as e:
 				stop()
