@@ -43,70 +43,18 @@ class Vision:
     def detect_color_objects(self, frame, color_range):
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_frame, color_range[0], color_range[1])
-
         # Create a mask to exclude the top 100 pixels
         mask[:100, 100:] = 0
-
         # Preprocess the mask
         mask = cv2.GaussianBlur(mask, (5, 5), 0)
         kernel = np.ones((5, 5), np.uint8)
         mask = cv2.erode(mask, kernel, iterations=2)
         mask = cv2.dilate(mask, kernel, iterations=2)
-
         # Find contours in the mask
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         # Draw a line to indicate the border
         cv2.line(frame, (0, 100), (frame.shape[1], 100), (0, 0, 255), 2)
-
         return contours, mask, frame
-
-        # Draw contour outlines and calculate center points
-        detected_objects = 0
-        center_points = []
-        estimated_distances = []
-        top_positions = []
-        estimated_distance = 0  # Default value
-
-        for contour in contours:
-            if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
-                cv2.drawContours(frame, [contour], -1, contour_color, 2)
-                detected_objects += 1
-
-                M = cv2.moments(contour)
-                if M["m00"] != 0:
-                    cX = int(M["m10"] / M["m00"])
-                    cY = int(M["m01"] / M["m00"])
-                    center_points.append((cX, cY))
-
-                    if color_name == 'black':
-                        rect = cv2.minAreaRect(contour)
-                        width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
-                        estimated_distance = self.black_pixel_to_distance(width)
-                        estimated_distances.append(estimated_distance)
-                        estimated_distance_text = f'Distance: {estimated_distance:.2f}'
-                        cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
-
-                    elif color_name == 'green':
-                        rect = cv2.minAreaRect(contour)
-                        width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
-                        estimated_distance = self.green_pixel_to_distance(width)
-                        estimated_distances.append(estimated_distance)
-                        estimated_distance_text = f'Distance: {estimated_distance:.2f}'
-                        cv2.putText(frame, estimated_distance_text, (cX - 50, cY + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, contour_color, 2)
-                    else: 
-                        estimated_distance = 0
-
-        return frame, mask, detected_objects, center_points, estimated_distance
-
-    def visualize(self, frame, masks):
-        cv2.imshow('Object Detection', frame)
-        cv2.imshow('Yellow Mask', masks['yellow'])
-        #cv2.imshow('Blue Mask', masks['blue'])
-        cv2.imshow('Green Mask', masks['green'])
-        cv2.imshow('Orange Mask', masks['orange'])
-        cv2.imshow('Black Mask', masks['black'])
-        cv2.imshow('Wall Mask', masks['wall'])
 
     def distance(self):    
         # Simulated data: Distance (in cm) and corresponding pixel counts (For Black)
@@ -121,31 +69,6 @@ class Vision:
         green_coefficients = np.polyfit(green_pixel_width, green_distances, 2)
         self.green_pixel_to_distance = np.poly1d(green_coefficients)
 
-    # def find_infomation(self):
-    #     self.distance()
-    #     while True:
-    #         ret, frame = self.cap.read()
-    #         if not ret:
-    #             break
-    #         formatted_info = []
-    #         for color_name, color_range in self.color_ranges.items():
-    #             contour_color = self.contour_colors[color_name]
-    #             frame, mask, num_objects, center_points, estimated_distance = self.detect_color_objects(frame, color_range, contour_color, color_name)
-    #             self.masks[color_name] = mask
-    #             self.detected_objects_count[color_name] = num_objects
-    #             self.center_points_dict[color_name] = center_points
-    #             for cX, cY in center_points:
-    #                     text = f'({frame.shape[1] // 2 - cX})'
-    #                     cv2.circle(frame, (cX, cY), 5, self.contour_colors[color_name], -1)
-    #                     cv2.putText(frame, text, (cX + 10, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.contour_colors[color_name], 2)
-    #             if color_name == 'black':
-    #                 formatted_info.append(f"({color_name}, {text}_degrees, {estimated_distance:.2f}cm), {self.detected_objects_count[color_name]}_Asile")
-    #             else:
-    #                 formatted_info.append(f"({color_name}, {text}_degrees, {estimated_distance:.2f}cm), {0}_Asile")      
-
-    #         self.visualize(frame, self.masks)
-    #         return formatted_info
-
     def release_camera(self):
         self.cap.release()
         cv2.destroyAllWindows()    
@@ -155,8 +78,10 @@ class Vision:
         cv2.namedWindow('Camera Feed')
         cv2.namedWindow('Masked View')
 
-    def Test():
-
+    def Test(self):
+        print("Testting......")
+        print("Done")
+        print("Vision System Ready")
         return True
     
     def CheckPeople(self):
@@ -365,19 +290,10 @@ class Vision:
         print("error")
         return False
     
-    # def Object(self):
-    #     return True
-
-
-
-
-
 if __name__ == "__main__":
     vision = Vision() 
     vision.distance()   
     vision.display()
-    while True:
-        vision.PackZone()
-
-   # vision.release_camera()
+    vision.Test()
+    vision.release_camera()
 
