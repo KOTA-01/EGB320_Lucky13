@@ -11,13 +11,13 @@ class Vision:
         self.cap.configure(self.config)
         self.cap.set_controls({"AwbEnable": False})
         self.cap.start()
-        
+        self.ratio = 31/137
 
         # Constants
         self.MIN_CONTOUR_AREA_THRESHOLD = 1000
     
     color_ranges = {
-        'yellow': (np.array([9, 85, 0]), np.array([19  , 255, 255])),
+        'yellow': (np.array([9, 71, 0]), np.array([28, 255, 255])),
         'blue': (np.array([104, 95, 0]), np.array([179, 255, 255])),
         'green': (np.array([51, 82, 45]), np.array([103, 255, 255])),
         'orange': (np.array([0, 68, 0]), np.array([60, 255, 255])),
@@ -86,15 +86,16 @@ class Vision:
             bearing = []
             for contour in Green_Contours:
                 if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
-                    cv2.drawContours(frame, [contour], -1, self.contour_colors.get('green'), 2)
+                    cv2.drawContours(Green_frame, [contour], -1, self.contour_colors.get('green'), 2)
                     People_detected += 1
                     # X,Y Coords
                     M = cv2.moments(contour)
                     if M["m00"] != 0:
                         cX = int(M["m10"] / M["m00"])
                         cY = int(M["m01"] / M["m00"])
-                        cX = frame.shape[1] // 2 - cX
+                        cX = 274/2- cX
                         center_points.append((cX, cY))
+                        cX = round(self.ratio * cX)
                         bearing.append(cX)
                     # Bearing
             #View
@@ -127,8 +128,8 @@ class Vision:
             SumBearing = 0
             Black_distances = []
             for contour in Black_Contours:
-                if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
-                    cv2.drawContours(frame, [contour], -1, self.contour_colors.get('black'), 2)
+                if cv2.contourArea(contour) > 500:
+                    cv2.drawContours(Black_frame, [contour], -1, self.contour_colors.get('black'), 2)
                     Dots_detected += 1
             # Distance
                     rect = cv2.minAreaRect(contour)
@@ -140,7 +141,8 @@ class Vision:
                     if M["m00"] != 0:
                         cX = int(M["m10"] / M["m00"])
                         cY = int(M["m01"] / M["m00"])
-                        cX = frame.shape[1] // 2 - cX
+                        cX = 274/2 - cX
+                        cX = round(self.ratio * cX)
                         center_points.append((cX, cY))
             # Bearing
                         bearing.append(cX)
@@ -189,30 +191,24 @@ class Vision:
                 bearing = []
                 for contour in Blue_Contours:
                     if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
-                        cv2.drawContours(frame, [contour], -1, self.contour_colors.get('blue'), 2)
+                        cv2.drawContours(Blue_frame, [contour], -1, self.contour_colors.get('blue'), 2)
                         Shelves += 1
                         
                         M = cv2.moments(contour)
                         if M["m00"] != 0:
                             cX = int(M["m10"] / M["m00"])
                             cY = int(M["m01"] / M["m00"])
-                            cX = frame.shape[1] // 2 - cX
+                            cv2.circle(Blue_frame, (cX, cY), 5, (0,0,255), -1) 
+                            cX = 274//2 - cX
                         # X,Y Coords
                             center_points.append((cX, cY))
                         # Bearing
+                            cX = round(self.ratio * cX)
                             bearing.append(cX)
+                            
                 
                 if len(bearing) == 2:
-                    if bearing[0] > bearing[1]:
-                        Diff = bearing[0] - bearing[1]
-                        CenDiff = Diff/2
-                        CenBearing = bearing[1]+CenDiff
-                    elif bearing[1] > bearing[0]:
-                        Diff = bearing[1] - bearing[0]
-                        CenDiff = Diff/2
-                        CenBearing = bearing[0]+CenDiff
-                    
-                #View
+                    CenBearing = (sum(bearing)/2)                #View
                 cv2.imshow('Camera Feed', Blue_frame)
                 cv2.imshow('Masked View', Blue_Mask)
 
@@ -224,7 +220,7 @@ class Vision:
                     print("Shelve1 [", bearing[0], "]")
                     return True, bearing
                 elif (Shelves == 2):
-                    print("Shelve2 [", CenBearing, "]")
+                    print("Shelve2 [",CenBearing, "]")
                     return True
                 elif (Shelves > 2):
                     print("error")
@@ -238,21 +234,23 @@ class Vision:
     def PackZone(self):
         while True:
             frame = self.cap.capture_array()
+            frame[:, :150] = 0
             Yellow_Contours, Yellow_Mask, Yellow_frame = self.detect_color_objects(frame, self.color_ranges.get('yellow'))
             Zone_detected = 0
             center_points = []
             bearing = []
             for contour in Yellow_Contours:
                 if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
-                    cv2.drawContours(frame, [contour], -1, self.contour_colors.get('yellow'), 2)
+                    cv2.drawContours(Yellow_frame, [contour], -1, self.contour_colors.get('yellow'), 2)
                     Zone_detected += 1
                     # X,Y Coords
                     M = cv2.moments(contour)
                     if M["m00"] != 0:
                         cX = int(M["m10"] / M["m00"])
                         cY = int(M["m01"] / M["m00"])
-                        cX = frame.shape[1] // 2 - cX
+                        cX = 274/2 - cX
                         center_points.append((cX, cY))
+                        cX = round(self.ratio * cX)
                         bearing.append(cX)
                     # Bearing
             #View
@@ -264,7 +262,7 @@ class Vision:
                 break
 
             if (Zone_detected == 1):
-                print("Zone Detected [", bearing[0], "]")
+                print("Zone Detected [",bearing[0], "]")
                 return True, bearing
             elif (Zone_detected > 1):
                 print("Too many Zones/error")
@@ -282,8 +280,8 @@ if __name__ == "__main__":
     vision.Test()
     while True:
         vision.Asile()
-        vision.CheckPeople()
-        vision.Shelves()
-        vision.PackZone()
+        #vision.CheckPeople()
+        #vision.Shelves()
+        #vision.PackZone()
     vision.release_camera()
   
