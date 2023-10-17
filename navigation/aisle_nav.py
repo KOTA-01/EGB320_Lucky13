@@ -28,7 +28,7 @@ from Motor_Task import steering
 
 from ultrasonic import GroveUltrasonicRanger
 
-from Vistest import Vision
+from Vision(PIVR) import Vision
 
 #from item_collection.collection01 import Collection
 
@@ -210,6 +210,8 @@ class robot(object):
 
         rotation_angle = 0
 
+        detectedRowMarker = None
+
 
 
         while True:
@@ -224,29 +226,18 @@ class robot(object):
 
                     while rotation_angle < 2 * math.pi:
 
-                        data = vision.find_information()
+                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        for info in data:
-
-                            color_name, bearing, distance, aisle = self.parse_info(info)
-
-                            if color_name == 'black':
-
-                                detectedRowMarker = bearing
-
-                        rotation_angle += 0.1 * 0.3
-
-                        proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                        
-
-                        if detectedRowMarker is not None:
-
-                            stop() # Find the motions to stop
+                        if dot_success and Dots_detected > 0:
+                            stop()
 
                             state = identify_destination
 
                             break
+
+                        rotation_angle += 0.1 * 0.3
+
+                        proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
 
 
 
@@ -280,38 +271,38 @@ class robot(object):
 
             elif state == orient_obstacle_avoidance:
 
-                data = vision.find_information()
+
+                obstacle_bearing = None
+
+                closest_shelf = None
 
 
 
-                for info in data:
+                person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+                
+                if person_success and self.cm_to_m(person_distance) < 0.2:
 
-                    color_name, bearing, distance, aise = self.parse_info(info)
+                    time.sleep(1)
 
+                    if person_bearing < 0:
 
+                        while person_bearing < 0:
 
-                    obstacle_bearing = None
+                            turn_indefinitely("Right")
 
-                    closest_shelf = None
+                    else:
 
+                        while person_bearing > 0:
 
+                            turn_indefinitely("Left")
 
-                    if color_name == 'green':
-                        obstacle_bearing = bearing
+                shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-
-
-                    elif color_name == 'blue' and proximity < 0.2:
-                        closest_shelf = bearing
-
-                    
-
-                if closest_shelf:
+                if shelf_success:
 
                     Motor("RotateR_180")
 
-                    if color_name == 'green':
-                        obstacle_bearing = bearing
+                    if person_success and self.cm_to_m(person_distance) < 0.2:
 
                         time.sleep(1)
 
@@ -364,24 +355,18 @@ class robot(object):
                 self.aligning()
 
 
+                person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
 
 
-                data = vision.find_information()
+                if person_success and self.cm_to_m(person_distance) < 0.2:
+                    
+                    person_distance = self.cm_to_m(person_distance)
 
-                for info in data:
-
-                    color_name, bearing, distance, aise = self.parse_info(info)
-
-
-
-                    if color_name == 'green':
-                        obstacle_distance = self.cm_to_m(distance)
-
-                        if obstacle_distance < 0.2:
+                    if person_distance < 0.2:
 
 
-                            state = avoid_obstacle_unseen_marker
+                        state = avoid_obstacle_unseen_marker
 
 
 
@@ -441,19 +426,14 @@ class robot(object):
 
                     while time.time() - start_time < 3:
 
-                        data = vision.find_information()
-
                         proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
 
-                        for info in data:
-
-                            color_name, bearing, distance, aise = self.parse_info(info)
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
 
+                        if person_success and self.cm_to_m(person_distance) < 0.2:
 
-                            if color_name == 'green' and self.cm_to_m(distance) < 0.2:
-
-                                state = avoid_obstacle_seen_marker
+                            state = avoid_obstacle_seen_marker
 
 
 
@@ -487,15 +467,11 @@ class robot(object):
 
                     while time.time() - start_time < 3:
 
-                        data = vision.find_information()
-
                         proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
 
-                        for info in data:
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
-                            color_name, bearing, distance, aise = self.parse_info(info)
-
-                            if color_name == 'green' and self.cm_to_m(distance) < 0.2:
+                        if person_success and self.cm_to_m(person_distance) < 0.2:
 
                                 state = avoid_obstacle_seen_marker
 
@@ -545,15 +521,12 @@ class robot(object):
 
                     proximity = self.cm_to_m(ultra.get_distance())
 
-                    data = vision.find_information()
 
+                    person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
+                    shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-                    color_name, bearing, distance, aise = self.parse_info(info)
-
-
-
-                    if color_name == 'green' and self.cm_to_m(distance) < 0.2:
+                    if person_success and self.cm_to_m(person_distance) < 0.2:
 
                         state = avoid_obstacle_seen_marker
 
@@ -581,7 +554,7 @@ class robot(object):
 
                     
 
-                    elif color_name == 'blue':
+                    elif shelf_success:
 
                         turn_indefinitely("Right")
 
@@ -603,7 +576,9 @@ class robot(object):
 
                 stop() # Stop
 
-                detected_shelf = vision.detected_objects_count('blue')
+                shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
+
+                detected_shelf = shelf_success
 
                 proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
 
@@ -707,23 +682,21 @@ class robot(object):
 
                     while True:
 
-                        data = vision.find_information()
+                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        for info in data:
+                        shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-                            color_name, bearing, distance, aise = self.parse_info(info)
+                        if dot_success:
 
-                            if color_name == 'black':
+                            initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                                initial_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
+                            print(f"Bearing for black object: {initial_bearing} radians")
 
-                                print(f"Bearing for black object: {initial_bearing} radians")
+                        if shelf_success:
 
-                            if color_name == 'blue':
+                            if closest_shelf not in locals():
 
-                                if closest_shelf not in locals():
-
-                                    closest_shelf = color_name
+                                closest_shelf = shelf_success
 
                                 
 
@@ -783,17 +756,13 @@ class robot(object):
 
                     while True:
 
-                        data = vision.find_information()
+                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        for info in data:
+                        if dot_success:
 
-                            color_name, bearing, distance, aise = self.parse_info(info)
+                            row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                            if color_name == 'black':
-
-                                row_marker_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                                print(f"Bearing for black object: {initial_bearing} radians")
+                            print(f"Bearing for black object: {initial_bearing} radians")
 
                         proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
 
@@ -819,19 +788,15 @@ class robot(object):
 
                     while True:
 
-                        data = vision.find_information()
+                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        for info in data:
+                        if dot_success:
 
-                            color_name, bearing, distance, aisle = self.parse_info(info)
+                            row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                            if color_name == 'black':
+                            print(f"Bearing for black object: {initial_bearing} radians")
 
-                                row_marker_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                                print(f"Bearing for black object: {initial_bearing} radians")
-
-                        current_range = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
+                        current_range = self.cm_to_m(dot_distance) # Get the ranges from the ultrasonic sensor
 
                         # Adjust orientation based on bearing
 
@@ -897,19 +862,18 @@ class robot(object):
 
                     while True:
 
-                        data = vision.find_information()
+                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        rowmarker, closest_shelf = self.get_bearing_and_shelf(data, 'black'), self.get_bearing_and_shelf(data, 'blue')[1]
+                        shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-                        proximity = self.cm_to_m(ultra.get_distance)
+                        rowmarker = dot_success
 
-                        color_data = {}
-
+                        closest_shelf = shelf_success
 
 
                         if rowmarker:
 
-                            rowmarker = self.degrees_to_radians(rowmarker)
+                            rowmarker = self.degrees_to_radians(dot_bearing)
 
                             print(f"bearing for rowmaker: {rowmarker} radians")
 
@@ -918,15 +882,11 @@ class robot(object):
 
 
 
-                        color_name, bearing, distance, aisle = self.parse_info(info)
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
-                        color_data[color_name] = (float(bearing), float(distance))
+                        if person_success and self.cm_to_m(person_distance) < 0.2:
 
-
-
-                        if 'green' in color_data and color_data['green'][1] < 20:
-
-                            obstacle_bearing = color_data['green'][0]
+                            obstacle_bearing = person_bearing
 
                             if obstacle_bearing < 0:
 
@@ -1008,19 +968,13 @@ class robot(object):
 
             elif state == marker:
 
-                data = vision.find_information()
+                dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                for info in data:
-
-                    color_name, bearing, distance, aise = self.parse_info(info)
-
-                    if color_name == 'black':
-
-                        rowmarker_cam_distance = self.cm_to_m(distance)
+                rowmarker_cam_distance = self.cm_to_m(dot_distance)
 
                 if rowmarker_cam_distance is not None:
 
-                    range_init = ultra.get_distance
+                    range_init = ultra.get_distance()
 
                     print(f"The ultrasonic range is: {range_init:.4f} and camera range is: {rowmarker_cam_distance:.4f}")
 
@@ -1092,7 +1046,9 @@ class robot(object):
 
                 print("YELLOW LED - Picking up item ...")
 
-                collect.Upack()
+                time.sleep(5)
+
+                #collect.Upack()
 
                 state = done
 
@@ -1126,17 +1082,13 @@ class robot(object):
 
         while True:
 
-            data = vision.find_information()
+            dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-            for info in data:
+            if dot_success:
 
-                color_name, bearing, distance, aise = self.parse_info(info)
+                initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                if color_name == 'black':
-
-                    initial_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                    print(f"Bearing for black object: {initial_bearing} radians")
+                print(f"Bearing for black object: {initial_bearing} radians")
 
 
 
@@ -1170,11 +1122,11 @@ class robot(object):
 
             for info in data:
 
-                color_name, bearing, distance, aisle = self.parse_info(info)
+                yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
 
-                if color_name == 'yellow':
+                if yellow_success:
 
-                    packing_bay_rb = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
+                    packing_bay_rb = self.degrees_to_radians(float(yellow_bearing))  # converting to float before converting to radians
 
                     print(f"Bearing for yellow object: {packing_bay_rb} radians")
 
@@ -1196,17 +1148,13 @@ class robot(object):
 
         while True:
 
-            data = vision.find_information()
+            yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
 
-            for info in data:
+            if yellow_success:
 
-                color_name, bearing, distance, aisle = self.parse_info(info)
+                packing_bay_rb = self.degrees_to_radians(float(yellow_bearing))  # converting to float before converting to radians
 
-                if color_name == 'yellow':
-
-                    packing_bay_rb = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                    print(f"Bearing for yellow object: {packing_bay_rb} radians")
+                print(f"Bearing for yellow object: {packing_bay_rb} radians")
 
             if not packing_bay_rb:
 
@@ -1228,7 +1176,7 @@ class robot(object):
 
         angular_tolerance = 0.1
 
-        safe_stopping_distance = 0.03
+        safe_stopping_distance = 0.15
 
         # Stage 1: Rotate until the packing bay is centered
 
@@ -1236,17 +1184,13 @@ class robot(object):
 
 
 
-            data = vision.find_information()
+            yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
 
-            for info in data:
+            if yellow_success:
 
-                color_name, bearing, distance, ailse = self.parse_info(info)
+                packing_bay_rb = (self.cm_to_m(yellow_distance), self.degrees_to_radians(float(yellow_bearing)))  # converting to float before converting to radians
 
-                if color_name == 'yellow':
-
-                    packing_bay_rb = (self.cm_to_m(distance), self.degrees_to_radians(float(bearing)))  # converting to float before converting to radians
-
-                    print(f"Bearing for yellow object: {packing_bay_rb} radians")
+                print(f"Bearing for yellow object: {packing_bay_rb} radians")
 
             if not packing_bay_rb:
 
@@ -1288,13 +1232,11 @@ class robot(object):
 
             proximity = self.cm_to_m(ultra.get_distance())
 
-            for info in data:
+            yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
 
-                color_name, bearing, distance, aise = self.parse_info(info)
-
-                if color_name == 'yellow':
+            if yellow_success:
                 
-                    packing_bay_rb = bearing
+                packing_bay_rb = yellow_bearing
 
             if not packing_bay_rb:
 
@@ -1310,7 +1252,7 @@ class robot(object):
 
             # If we're close enough, stop
 
-            if proximity < safe_stopping_distance:  # Assume 0.5 m is a safe stopping distance
+            if proximity < safe_stopping_distance:  # Assume 0.15 m is a safe stopping distance
 
                 stop
 
@@ -1344,17 +1286,13 @@ class robot(object):
 
         while True:
 
-            data = vision.find_information()
+            dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-            for info in data:
+            if dot_success:
 
-                color_name, bearing, distance, aise = self.parse_info(info)
+                initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                if color_name == 'black':
-
-                    initial_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                    print(f"Bearing for black object: {initial_bearing} radians")
+                print(f"Bearing for black object: {initial_bearing} radians")
 
             
 
@@ -1376,17 +1314,13 @@ class robot(object):
 
         while True:
 
-            data = vision.find_information()
+            dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-            for info in data:
+            if dot_success:
 
-                color_name, bearing, distance, aise = self.parse_info(info)
+                row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
-                if color_name == 'black':
-
-                    row_marker_bearing = self.degrees_to_radians(float(bearing))  # converting to float before converting to radians
-
-                    print(f"Bearing for black object: {initial_bearing} radians")
+                print(f"Bearing for black object: {initial_bearing} radians")
 
             current_range = ultra.get_distance() # connect to the ultrasonic
 
@@ -1443,48 +1377,45 @@ class robot(object):
 
 
     def updatecurrentAisle(self):
-
-        turn_indefinitely("Left") # rotate 360 degrees until marker is seen
-
-        
+        turn_indefinitely("Left")  # rotate 360 degrees until marker is seen
 
         while True:
+            success, Dots_detected, AvgBearing, AvgDistance = self.Asile()
 
-            data = vision.find_information()
+            if success:
+                stop()  # stop rotating
 
-            print(f"data is{data}")
+                # Print the detected data
+                print(f"Number of black dots detected: {Dots_detected}.")
+                print(f"Bearing for black object: {AvgBearing} radians. Distance: {AvgDistance} units.")
 
-            for info in data:
-
-                color_name, bearing, distance, aisle = self.parse_info(info)
-
-                print(f"Parsed info: color name: {color_name}, bearing: {bearing}, distance: {distance}, aisle: {aisle}")
-
-                if color_name == 'black':
-
-                    stop()
-
-                    print(f"Bearing for black object: {bearing} radians, aisle {aisle}")
-
-                    time.sleep(5)
-
-                    return aisle
+                # Return the aisle based on the number of dots detected
+                if Dots_detected == 1:
+                    print("You're in Aisle 1.")
+                    return Dots_detected, "0"
+                elif Dots_detected == 2:
+                    print("You're in Aisle 2.")
+                    return Dots_detected, "1"
+                elif Dots_detected == 3:
+                    print("You're in Aisle 3.")
+                    return Dots_detected, "2"
 
             time.sleep(0.1)
 
 
 
-    def get_bearing_and_shelf(self, data, color_target):
 
-        for info in data:
+    # def get_bearing_and_shelf(self, data, color_target):
 
-            color_name, bearing, disatance, aisle = self.parse_info(info)
+    #     for info in data:
 
-            if color_name == color_target:
+    #         color_name, bearing, disatance, aisle = self.parse_info(info)
 
-                return float(bearing)
+    #         if color_name == color_target:
 
-        return None, None
+    #             return float(bearing)
+
+    #     return None, None
 
 
 
@@ -1516,17 +1447,17 @@ class robot(object):
 
     
 
-    def parse_info(self, info_string):
+    # def parse_info(self, info_string):
 
-    # Example input: "('blue', -80_degrees, 0.00cm), 0_Asile"
+    # # Example input: "('blue', -80_degrees, 0.00cm), 0_Asile"
 
-        color_name = info_string.split(",")[0].strip(" ()")
+    #     color_name = info_string.split(",")[0].strip(" ()")
 
-        bearing = float(info_string.split(",")[1].split("_")[0].strip(" ()"))
+    #     bearing = float(info_string.split(",")[1].split("_")[0].strip(" ()"))
 
-        distance = float(info_string.split(",")[2].split("c")[0].strip(" ()"))
+    #     distance = float(info_string.split(",")[2].split("c")[0].strip(" ()"))
 
-        aisle = int(info_string.split(",")[3].split("_")[0].strip(" ()"))
+    #     aisle = int(info_string.split(",")[3].split("_")[0].strip(" ()"))
 
-        return color_name, bearing, distance, aisle
+    #     return color_name, bearing, distance, aisle
 
