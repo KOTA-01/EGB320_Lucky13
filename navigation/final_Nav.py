@@ -33,6 +33,7 @@ if THIS_BOARD_TYPE:
   board = Board(1, 0x10)    # RaspberryPi select bus 1, set address to 0x10
 else:
   board = Board(7, 0x10)    # RockPi select bus 7, set address to 0x10
+  
 
 def board_detect():
   l = board.detecte()
@@ -199,10 +200,14 @@ class robot(object):
             if state == initialise:
             # 2. Adjusting bearing towards the end row marker
                 while True:
+                    # Find Variables
                     dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
                     shelf_success, shelf_count, shelf_bearing, shelf_width = vision.Shelves()
+
+                    # If Aisle markers, find radian bearing
                     if dot_success == True:
-                        initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
+                        # converting to float before converting to radians
+                        initial_bearing = self.degrees_to_radians(float(dot_bearing))  
                         print(f"Bearing for black object: {initial_bearing} radians")
 
                     if shelf_success == True:
@@ -236,101 +241,57 @@ class robot(object):
                         time.sleep(0.1)
 
             elif state == adjust:
-
                     # 3. Drive and Adjust based on Row Marker's bearing and distance
-
                     while True:
-
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
                         if dot_success == True:
-
                             row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
                             print(f"Bearing for black object: {initial_bearing} radians")
-
                         proximity = ultra.get_distance() # Get the ranges from the ultrasonic sensor
 
-
-
                         if proximity < 0.2:
-
                             print("repositioning for entry")
-
                             state = reposition      
-
                             break   
-
-
-
+                        
                         else:
-
-                            state = drive           
+                            state = drive   
 
             elif state == drive:
-
                     while True:
-
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
                         if dot_success == True:
-
                             row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
                             print(f"Bearing for black object: {initial_bearing} radians")
 
                         current_range = dot_distance # Get the ranges from the ultrasonic sensor
 
                         # Adjust orientation based on bearing
-
                         if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:
-
                             angular_velocity = -0.05 if row_marker_bearing < 0 else 0.05 # Find the average velocity for theta
-
                         else:
-
                             angular_velocity = 0 
 
-
-
                         # If we are within the acceptable range of the bay, stop
-
                         if target_distance - linear_tolerance <= current_range <= target_distance + linear_tolerance:
-
                             stop() # Find the motions needed stop
-
                             state = complete
-
                             break
 
-
-
                         # If we pass the bay (i.e., too close to the end marker), reverse
-
                         elif current_range < target_distance - linear_tolerance:
-
                             linear_velocity = -0.04 # Find the motions needed backwards slow
 
-
-
                         # Otherwise, drive forward towards the bay
-
                         else:
-
-                            linear_velocity = 0.04 # Find the motions needed forward slow
-
-                        
+                            linear_velocity = 0.04 # Find the motions needed forward slow                        
 
                         steering(linear_velocity, angular_velocity)
-
                         time.sleep(0.1)
               
             elif state == complete:
-
                     print("I'm at the bay")
-
                     time.sleep(2)
-
                     break
 
             elif state == reposition:
@@ -340,6 +301,7 @@ class robot(object):
                     dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
                     shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
+                    # Covert to state variables
                     rowmarker = dot_success
                     closest_shelf = shelf_success
 
