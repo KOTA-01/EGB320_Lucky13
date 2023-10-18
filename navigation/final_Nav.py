@@ -227,6 +227,7 @@ class robot(object):
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
                         if dot_success and Dots_detected > 0:
+                            
                             stop()
 
                             state = identify_destination
