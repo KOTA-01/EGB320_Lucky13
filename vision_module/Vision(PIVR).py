@@ -58,10 +58,10 @@ class Vision:
         self.black_pixel_to_distance = np.poly1d(black_coefficients)
 
         # Simulated data: Distance (in cm) and corresponding pixel counts (For Green)
-        green_distances = [8, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,105, 110, 115, 120, 125]
-        green_pixel_width = [316, 278, 246, 231, 224, 187, 162, 141, 127, 116, 105, 96, 90, 83, 78, 73, 69, 65, 61, 59, 56, 55, 52, 50, 48]
-        green_coefficients = np.polyfit(green_pixel_width, green_distances, 7)
-        self.green_pixel_to_distance = np.poly1d(green_coefficients)
+        # green_distances = [8, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,105, 110, 115, 120, 125]
+        # green_pixel_width = [316, 278, 246, 231, 224, 187, 162, 141, 127, 116, 105, 96, 90, 83, 78, 73, 69, 65, 61, 59, 56, 55, 52, 50, 48]
+        # green_coefficients = np.polyfit(green_pixel_width, green_distances, 7)
+        # self.green_pixel_to_distance = np.poly1d(green_coefficients)
         
     def release_camera(self):
         cv2.destroyAllWindows()    
@@ -84,10 +84,15 @@ class Vision:
             People_detected = 0
             center_points = []
             bearing = []
+            Green_width = []
             for contour in Green_Contours:
                 if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
                     cv2.drawContours(Green_frame, [contour], -1, self.contour_colors.get('green'), 2)
                     People_detected += 1
+                    # Distance
+                    rect = cv2.minAreaRect(contour)
+                    width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                    Green_width.append(width)
                     # X,Y Coords
                     M = cv2.moments(contour)
                     if M["m00"] != 0:
@@ -98,6 +103,13 @@ class Vision:
                         cX = round(self.ratio * cX)
                         bearing.append(cX)
                     # Bearing
+
+
+            SumGreenWidth = sum(Green_width)
+            if SumGreenWidth != 0:
+                AvgGreenWidth = round(SumGreenWidth/len(Green_width))
+            else:
+                AvgGreenWidth = 0
             #View
             cv2.imshow('Camera Feed', Green_frame)
             cv2.imshow('Masked View', Green_Mask)
@@ -108,13 +120,14 @@ class Vision:
 
             if (People_detected == 1):
                 print("1 person detected [", cX, "]")
-                return True, bearing
+                return True, bearing, AvgGreenWidth
             elif (People_detected > 1):
                 print("Too many People")
                 return False
             else:    
                 print("clear")
-                return False            
+                return False    
+                    
         print("error")
         return False
         
@@ -177,7 +190,7 @@ class Vision:
                 return True, 3, AvgBearing, AvgDistance
             else:    
                 print("No Asile Found")
-                return False
+                return True
             
         print("error")
         return False
