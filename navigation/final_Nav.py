@@ -229,8 +229,8 @@ class robot(object):
 
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        if dot_success and Dots_detected > 0:
-                            
+                        if (dot_success == True) and (Dots_detected > 0):
+
                             stop()
 
                             state = identify_destination
@@ -265,7 +265,7 @@ class robot(object):
 
                     
 
-                if not detectedRowMarker and state != orient_obstacle_avoidance:
+                if (dot_success == False) and (state != orient_obstacle_avoidance):
 
                     state = reposition
 
@@ -282,7 +282,7 @@ class robot(object):
 
                 person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
                 
-                if person_success and self.cm_to_m(person_distance) < 0.2:
+                if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                     time.sleep(1)
 
@@ -304,7 +304,7 @@ class robot(object):
 
                     Motor("RotateR_180")
 
-                    if person_success and self.cm_to_m(person_distance) < 0.2:
+                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                         time.sleep(1)
 
@@ -361,7 +361,7 @@ class robot(object):
 
 
 
-                if person_success and self.cm_to_m(person_distance) < 0.2:
+                if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
                     
                     person_distance = self.cm_to_m(person_distance)
 
@@ -433,7 +433,7 @@ class robot(object):
                         person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
 
-                        if person_success and self.cm_to_m(person_distance) < 0.2:
+                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                             state = avoid_obstacle_seen_marker
 
@@ -473,7 +473,7 @@ class robot(object):
 
                         person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
-                        if person_success and self.cm_to_m(person_distance) < 0.2:
+                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                                 state = avoid_obstacle_seen_marker
 
@@ -528,7 +528,7 @@ class robot(object):
 
                     shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-                    if person_success and self.cm_to_m(person_distance) < 0.2:
+                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                         state = avoid_obstacle_seen_marker
 
@@ -688,13 +688,13 @@ class robot(object):
 
                         shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
 
-                        if dot_success:
+                        if dot_success == True:
 
                             initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
                             print(f"Bearing for black object: {initial_bearing} radians")
 
-                        if shelf_success:
+                        if shelf_success == True:
 
                             if closest_shelf not in locals():
 
@@ -710,7 +710,7 @@ class robot(object):
 
                         if proximity < 0.2:
 
-                            if closest_shelf:
+                            if closest_shelf == True:
 
                                 print("repositioning to get a better entry")
 
@@ -760,7 +760,7 @@ class robot(object):
 
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        if dot_success:
+                        if dot_success == True:
 
                             row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
@@ -792,7 +792,7 @@ class robot(object):
 
                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-                        if dot_success:
+                        if dot_success == True:
 
                             row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
@@ -873,7 +873,7 @@ class robot(object):
                         closest_shelf = shelf_success
 
 
-                        if rowmarker:
+                        if rowmarker == True:
 
                             rowmarker = self.degrees_to_radians(dot_bearing)
 
@@ -886,7 +886,7 @@ class robot(object):
 
                         person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
-                        if person_success and self.cm_to_m(person_distance) < 0.2:
+                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
 
                             obstacle_bearing = person_bearing
 
@@ -910,7 +910,7 @@ class robot(object):
 
                         
 
-                        if closest_shelf and proximity <= 0.5:
+                        if (closest_shelf == True) and (proximity <= 0.5):
 
                             print("In reposition state: avoiding obstacle...")
 
@@ -1286,7 +1286,7 @@ class robot(object):
 
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-            if dot_success:
+            if dot_success == True:
 
                 initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
@@ -1314,7 +1314,7 @@ class robot(object):
 
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
 
-            if dot_success:
+            if dot_success == True:
 
                 row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
 
