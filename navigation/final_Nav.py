@@ -164,32 +164,21 @@ current_order = order_reader.ReadOrder("Order_1.csv")
 #change
 
 class robot(object):
-
     def __init__ (self):
-
         pass
 
-
-
     def degrees_to_radians(degrees):
-
         return degrees * (math.pi/180)
     
     def cm_to_m(centimetres):
-
         return centimetres / 100
 
-    
     # Function Navigates the Robot to the correct Aisle
     def nav_to_aisle(self):
         #STATE Library 
         orient = 1
         reposition = 2
         identify_destination = 3
-        avoid_obstacle_unseen_marker = 4
-        avoid_obstacle_seen_marker = 5
-        orient_obstacle_avoidance = 6
-        done = 7
 
         #Starting State
         state = orient
@@ -269,114 +258,66 @@ class robot(object):
             else:
                 print("error")
 
-
+    # Function Navigates the Robot down the Asile
     def bayNav(self, bay_number):
+        #STATE Library 
+        initialise = 1
+        reposition = 2
+        adjust = 3
+        drive = 4
+        complete = 5
 
-            target_distance = distance_from_wall(bay_number)
+        #Starting State
+        state = initialise
 
-            linear_tolerance = 0.02
+        #Initalise Variables
+        target_distance = distance_from_wall(bay_number)
+        linear_tolerance = 0.02
+        angular_tolerance = 0.05
+        lateral_tolerance = 0.05
+        time.sleep(2)
 
-            angular_tolerance = 0.05
+        while True:
+            if state == initialise:
+            # 2. Adjusting bearing towards the end row marker
+                while True:
+                    dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
+                    shelf_success, shelf_count, shelf_bearing, shelf_width = vision.Shelves()
+                    if dot_success == True:
+                        initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
+                        print(f"Bearing for black object: {initial_bearing} radians")
 
-            lateral_tolerance = 0.05
+                    if shelf_success == True:
+                        if closest_shelf not in locals():
+                            closest_shelf = shelf_success                                
 
-            time.sleep(2)
+                    print("initialising centre")
+                    proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor                        
 
-
-
-            initialise = 1
-
-            reposition = 2
-
-            adjust = 3
-
-            drive = 4
-
-            complete = 5
-
-            
-
-            state = initialise
-
-
-
-            while True:
-
-                if state == initialise:
-
-                    # 2. Adjusting bearing towards the end row marker
-
-                    while True:
-
-                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
-                        shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
-
-                        if dot_success == True:
-
-                            initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
-                            print(f"Bearing for black object: {initial_bearing} radians")
-
-                        if shelf_success == True:
-
-                            if closest_shelf not in locals():
-
-                                closest_shelf = shelf_success
-
-                                
-
-                        print("initialising centre")
-
-                        proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                        
-
-                        if proximity < 0.2:
-
-                            if closest_shelf == True:
-
-                                print("repositioning to get a better entry")
-
-                                stop() # Stop
-
-                                state = reposition
-
-                                break
-
-
-
-                        if initial_bearing is None:
-
-                            print("Marker not detected, searching...")
-
-                            stop()
-
+                    if proximity < 0.2:
+                        if closest_shelf == True:
+                            print("repositioning to get a better entry")
+                            stop() # Stop
                             state = reposition
-
                             break
 
-                            
 
-                        if not initial_bearing or abs(initial_bearing) < angular_tolerance:
+                    if initial_bearing is None:
+                        print("Marker not detected, searching...")
+                        stop()
+                        state = reposition
+                        break                           
 
-                            state = drive
+                    if not initial_bearing or abs(initial_bearing) < angular_tolerance:
+                        state = drive
+                        break
 
-                            break
+                    else:
+                        angular_velocity = -0.05 if initial_bearing < 0 else 0.05
+                        steering(0, angular_velocity) # Find the motions needed
+                        time.sleep(0.1)
 
-                        else:
-
-                            angular_velocity = -0.05 if initial_bearing < 0 else 0.05
-
-                            steering(0, angular_velocity) # Find the motions needed
-
-                            time.sleep(0.1)
-
-
-
-
-
-                elif state == adjust:
+            elif state == adjust:
 
                     # 3. Drive and Adjust based on Row Marker's bearing and distance
 
@@ -408,9 +349,7 @@ class robot(object):
 
                             state = drive           
 
-
-
-                elif state == drive:
+            elif state == drive:
 
                     while True:
 
@@ -467,10 +406,8 @@ class robot(object):
                         steering(linear_velocity, angular_velocity)
 
                         time.sleep(0.1)
-
-                
-
-                elif state == complete:
+              
+            elif state == complete:
 
                     print("I'm at the bay")
 
@@ -478,9 +415,7 @@ class robot(object):
 
                     break
 
-
-
-                elif state == reposition:
+            elif state == reposition:
 
                     print(f"previous aisle: {self.previous_aisle}")
 
