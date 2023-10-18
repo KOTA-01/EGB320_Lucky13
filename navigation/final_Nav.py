@@ -197,9 +197,10 @@ class robot(object):
         #Initalise Variables
         shelf_number = current_order["shelf"]
         aisle = layout.shelf_to_aisle[shelf_number]
+        Nav = False
 
         # Navigation To Asile Main Loop
-        while True:
+        while(Nav == False):
             # Orientation 
             if state == orient:
                 rotation_angle = 0
@@ -222,16 +223,17 @@ class robot(object):
                     print("error")   
 
             # Repositing The Robot for new Orientation Appoach 
-            elif state == reposition:
+            if state == reposition:
                 stop() # Stop 
                 print("unable to find row marker")
                 time.sleep(2)
                 # Rotates anticlockwise until it see packingbay, then angles off. 
                 self.aligning()
-                self.orient_obstacle_avoidance_move()
+                self.orient_obstacle_avoidance_move(2)
                 state = orient
 
-            elif state == identify_destination:
+            # Move to the Correct Asile
+            if state == identify_destination:
                 self.initAisle()
                 current_aisle = self.updatecurrentAisle()
 
@@ -239,232 +241,33 @@ class robot(object):
                     self.previous_aisle = current_aisle
                     print(f"previous aisle: {self.previous_aisle}")
 
-                proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                if proximity < 0.3:
-
-                    state = avoid_obstacle_seen_marker
-
-                    return self.previous_aisle
-
-                elif current_aisle < aisle:
-
-                    print("The aisle destination is to the right of me")
-
-                    Motor("RotateR_90") # Rotate 90 degrees to the right
-
-
-
-                    Motor("Forwards_60") # Drive forwards
-
-                    start_time = time.time()
-
-                    while time.time() - start_time < 3:
-
-                        proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-
-
-                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                            state = avoid_obstacle_seen_marker
-
-
-
-                        if proximity < 0.2:
-
-                            print("Obstacle detected while moving forward!")
-
-                            stop() # Stop
-
-                            state = avoid_obstacle_seen_marker
-
-                            break
-
-
-
+                # Main Loop for moving/deciding the correct direction
+                while (current_aisle != None):
+                    self.orient_obstacle_avoidance_rotate()
+                    if (current_aisle < aisle):
+                        print("The aisle destination is to the right of me")
+                        Motor("RotateR_90") # Rotate 90 degrees to the right
+                        self.orient_obstacle_avoidance_move(3)
                         time.sleep(0.1)
-
-                elif current_aisle > aisle:
-
-                    print("The aisle destination is to the left of me")
-
-                    Motor("RotateL_90") # Rotate 90 degrees to the left
-
-
-
-                    Motor("Forwards_60") # Drive forwards
-
-                    start_time = time.time()
-
-                    while time.time() - start_time < 3:
-
-                        proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-
-                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                                state = avoid_obstacle_seen_marker
-
-
-
-                        if proximity < 0.2:
-
-                            print("Obstacle detected while moving forward!")
-
-                            stop() # Stop
-
-                            state = avoid_obstacle_seen_marker
-
-                            break
-
-
-
+                        state = orient
+                    elif (current_aisle > aisle):                        
+                        print("The aisle destination is to the left of me")
+                        Motor("RotateL_90") # Rotate 90 degrees to the left
+                        self.orient_obstacle_avoidance_move(3)
                         time.sleep(0.1)
-                 
-                elif current_aisle == aisle:
-
-                    print("I'm in the right aisle!")
-
-                    state = done
-
-                    break
-
-                else:
-
-                    print("Can't find row marker, orientating myself...")
-
-                    state = orient
-
-            elif state == avoid_obstacle_unseen_marker:
-
-                print("Object in the way, navigating around...")
-
-                stop() # Stop
-
-                while True:
-
-                    proximity = self.cm_to_m(ultra.get_distance())
-
-
-                    person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-
-                    shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
-
-                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                        state = avoid_obstacle_seen_marker
-
-
-
-                        # Obstacle avoidance
-
-                        Motor("Backward_40")
-
-                        time.sleep(1)
-
-                        if obstacle_bearing < 0:
-
-                            turn_indefinitely("Right")
-
-                        else:
-
-                            turn_indefinitely("Left")
-
-                        
-
-                        Motor("Forward_40")
-
-                        time.sleep(1)
-
-                    
-
-                    elif shelf_success:
-
-                        turn_indefinitely("Right")
-
-                        time.sleep(0.1)
-
-
-
+                        state = orient
+                    elif (current_aisle == aisle):
+                        print("I'm in the right aisle!")
+                        print("nav_to_aisle complete")
+                        Nav = True
+                        break
                     else:
-
-                        print("Safe to move, transitioning to orientation mode.")
-
+                        print("Can't find row marker, orientating myself...")
                         state = orient
 
-            elif state == avoid_obstacle_seen_marker:
-
-                print("Object in the way, navigating around...")
-
-                stop() # Stop
-
-                shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
-
-                detected_shelf = shelf_success
-
-                proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                
-
-                if detected_shelf:
-
-                    target_direction = "RotateL_30" if current_aisle < aisle else "RotateR_30"
-
-                    Motor(target_direction)
-
-                    Motor("Forward_40")
-
-                    time.sleep(2)
-
-                
-
-                if proximity < 0.3:
-
-                    while proximity < 0.3:
-
-                        print("In obstacle avoidance state...")
-
-                        Motor("Backward_40") # Drive backwards
-
-                        time.sleep(0.1)  # Assume a 100 ms sleep duration
-
-                        proximity = ultra.get_distance()  # Update proximity
-
-                        print(f"Current proximity: {proximity}")
-
-                    state = orient 
-
-
-
-
-
-                proximity = self.cm_to_m(ultra.get_distance()) # Get the ranges from the ultrasonic sensor
-
-                if proximity >= 0.3:
-
-                    print("Safe distance, looking for row marker")
-
-                    Motor("Forward_40") # Drive forwards
-
-                    time.sleep(3)
-
-                    state = identify_destination
-
-
-
-                else:
-
-                    state = avoid_obstacle_seen_marker
-           
-            if state == done:
-
-                break
-
-
-
+            # Error Catching            
+            else:
+                print("error")
 
 
     def bayNav(self, bay_number):
@@ -1318,7 +1121,7 @@ class robot(object):
             person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
     
     # Function That moves the robot away from objects
-    def orient_obstacle_avoidance_move(self): 
+    def orient_obstacle_avoidance_move(self, duration):
         self.orient_obstacle_avoidance_rotate()
         person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
         if ((ultra.get_distance() < 20) or ((person_success == True) and (person_distance < 0.2))):
@@ -1328,11 +1131,13 @@ class robot(object):
             while True:
                 current_time = time.time()
                 elapsed_time = current_time - start_time
-                if elapsed_time >= 2:
+                if elapsed_time >= duration:
                     stop()
                     return 
                 else:
+                    print("Safe to move")
                     Motor("Forward_60")
+                    
                     person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
                     if ((ultra.get_distance() < 20) or ((person_success == True) and (person_distance < 0.2))):
                         return self.orient_obstacle_avoidance_move()
