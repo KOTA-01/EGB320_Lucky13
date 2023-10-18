@@ -1,92 +1,44 @@
 import time
-
 import cv2
-
 import numpy as np
-
 import math
-
 from itemIndex import item_to_index
-
 from Read_order_class import OrderReader
-
 from bayDistanceIndex import distance_from_wall
-
 from enum import IntEnum
-
 from shelf_aisle_index import WarehouseLayout
-
 from orient_avoidance import ObstacleDetectedException
-
 from Motor_Task import stop
-
 from Motor_Task import Motor
-
 from Motor_Task import turn_indefinitely
-
 from Motor_Task import steering
-
 from ultrasonic import GroveUltrasonicRanger
-
 from vistest import Vision
-
 #from item_collection.collection01 import Collection
-
 #collect = Collection()
-
 ultra = GroveUltrasonicRanger(26)
-
 layout = WarehouseLayout()
-
 order_reader = OrderReader()
-
 vision = Vision()
 vision.distance()   
 vision.display()
 vision.Test()
-
-
-
-
-
 import sys
-
 import os
-
 sys.path.append("../")
-
-
-
 import time
-
-
-
 from DFRobot_RaspberryPi_DC_Motor import THIS_BOARD_TYPE, DFRobot_DC_Motor_IIC as Board
 
-
-
 if THIS_BOARD_TYPE:
-
   board = Board(1, 0x10)    # RaspberryPi select bus 1, set address to 0x10
-
 else:
-
   board = Board(7, 0x10)    # RockPi select bus 7, set address to 0x10
 
-
-
 def board_detect():
-
   l = board.detecte()
-
   print("Board list conform:")
-
   print(l)
-
-
-
 ''' print last operate status, users can use this variable to determine the result of a function call. '''
-
 def print_board_status():
 
   if board.last_operate_status == board.STA_OK:
@@ -110,59 +62,28 @@ def print_board_status():
     print("board status: unsupport board framware version")
 
 if __name__ == "__main__":
-
-
-
   board_detect()    # If you forget address you had set, use this to detected them, must have class instance
-
-
-
   # Set board controler address, use it carefully, reboot module to make it effective
-
   '''
-
   board.set_addr(0x10)
-
   if board.last_operate_status != board.STA_OK:
-
     print("set board address faild")
-
   else:
-
     print("set board address success")
-
   '''
-
-
 
   while board.begin() != board.STA_OK:    # Board begin and check board status
-
     print_board_status()
-
     print("board begin faild")
-
     time.sleep(2)
-
   print("board begin success")
 
-
-
   board.set_encoder_enable(board.ALL)                 # Set selected DC motor encoder enable
-
   # board.set_encoder_disable(board.ALL)              # Set selected DC motor encoder disable
-
   board.set_encoder_reduction_ratio(board.ALL, 43)    # Set selected DC motor encoder reduction ratio, test motor reduction ratio is 43.8
-
-
-
   board.set_moter_pwm_frequency(1000)   # Set DC motor pwm frequency to 1000HZ
 
-vision_data = []
-
 current_order = order_reader.ReadOrder("Order_1.csv")
-
-#change
-
 class robot(object):
     def __init__ (self):
         pass
@@ -416,82 +337,44 @@ class robot(object):
                     break
 
             elif state == reposition:
+                print(f"previous aisle: {self.previous_aisle}")
+                while True:
+                    dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
+                    shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
+                    rowmarker = dot_success
+                    closest_shelf = shelf_success
 
-                    print(f"previous aisle: {self.previous_aisle}")
+                    if rowmarker == True:
+                        rowmarker = self.degrees_to_radians(dot_bearing)
+                        print(f"bearing for rowmaker: {rowmarker} radians")
 
+                    current_aisle = self.updatecurrentAisle()
+                    person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
 
-
-                    while True:
-
-                        dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
-                        shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
-
-                        rowmarker = dot_success
-
-                        closest_shelf = shelf_success
-
-
-                        if rowmarker == True:
-
-                            rowmarker = self.degrees_to_radians(dot_bearing)
-
-                            print(f"bearing for rowmaker: {rowmarker} radians")
-
-
-                        current_aisle = self.updatecurrentAisle()
-
-
-
-                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-
-                        if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                            obstacle_bearing = person_bearing
-
-                            if obstacle_bearing < 0:
-
-                                while obstacle_bearing < 0:
-
-                                    turn_indefinitely("Right")
-
-                            else:
-
-                                while obstacle_bearing > 0:
-
-                                    turn_indefinitely("Left")
-
-                            
-
-                            Motor("Forward_40")
-
-                            time.sleep(1)
-
-                        
-
-                        if (closest_shelf == True) and (proximity <= 0.5):
-
-                            print("In reposition state: avoiding obstacle...")
-
-                            if current_aisle < self.previous_aisle:
-
-                                self.navigate("RotateL_90", "Right", rowmarker)
-
-                            elif current_aisle > self.previous_aisle:
-
-                                self.navigate("RotateR_90", "Left", rowmarker)
-
-                            elif current_aisle == self.previous_aisle:
-
-                                self.navigate_backward_until_clear(proximity)
-
-                            else:
-
-                                state = initialise
-
+                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
+                        obstacle_bearing = person_bearing
+                        if obstacle_bearing < 0:
+                            while obstacle_bearing < 0:
+                                turn_indefinitely("Right")
                         else:
+                            while obstacle_bearing > 0:
+                                turn_indefinitely("Left")                            
 
-                               state = initialise
+                        Motor("Forward_40")
+                        time.sleep(1)                       
+
+                    if (closest_shelf == True) and (proximity <= 0.5):
+                        print("In reposition state: avoiding obstacle...")
+                        if current_aisle < self.previous_aisle:
+                            self.navigate("RotateL_90", "Right", rowmarker)
+                        elif current_aisle > self.previous_aisle:
+                            self.navigate("RotateR_90", "Left", rowmarker)
+                        elif current_aisle == self.previous_aisle:
+                            self.navigate_backward_until_clear(proximity)
+                        else:
+                            state = initialise
+                    else:
+                            state = initialise
 
                         
 
