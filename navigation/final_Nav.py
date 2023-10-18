@@ -41,6 +41,9 @@ layout = WarehouseLayout()
 order_reader = OrderReader()
 
 vision = Vision()
+vision.distance()   
+vision.display()
+vision.Test()
 
 
 
