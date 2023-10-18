@@ -339,29 +339,20 @@ class robot(object):
             elif state == reposition:
                 print(f"previous aisle: {self.previous_aisle}")
                 while True:
+                    # Find Values
                     dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
                     shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
+
                     rowmarker = dot_success
                     closest_shelf = shelf_success
 
+                    # Convert to Radians
                     if rowmarker == True:
                         rowmarker = self.degrees_to_radians(dot_bearing)
                         print(f"bearing for rowmaker: {rowmarker} radians")
 
                     current_aisle = self.updatecurrentAisle()
-                    person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-
-                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-                        obstacle_bearing = person_bearing
-                        if obstacle_bearing < 0:
-                            while obstacle_bearing < 0:
-                                turn_indefinitely("Right")
-                        else:
-                            while obstacle_bearing > 0:
-                                turn_indefinitely("Left")                            
-
-                        Motor("Forward_40")
-                        time.sleep(1)                       
+                    self.orient_obstacle_avoidance_move(1)               
 
                     if (closest_shelf == True) and (proximity <= 0.5):
                         print("In reposition state: avoiding obstacle...")
@@ -376,206 +367,102 @@ class robot(object):
                     else:
                             state = initialise
 
-                        
-
-                    
-
+    # Function Positions the Robot in front of the shelf         
     def run(self):
-
+        #STATE Library 
         orient = 1
-
         marker = 2
-
         nav_to_bay = 3
-
         at_bay = 4
-
         done = 5
 
-
-
+        #Starting State
         state = orient	
 
         while True:
-
             if state == orient:
-
                 self.initAisle()
-
                 self.updatecurrentAisle()
-
                 print("Driving down the aisle")
-
                 state = nav_to_bay
 
-
-
             elif state == marker:
-
                 dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
                 rowmarker_cam_distance = self.cm_to_m(dot_distance)
-
                 if rowmarker_cam_distance is not None:
-
                     range_init = ultra.get_distance()
-
                     print(f"The ultrasonic range is: {range_init:.4f} and camera range is: {rowmarker_cam_distance:.4f}")
-
-
-
-
-
                     state = nav_to_bay
 
-
-
             elif state == nav_to_bay:
-
                 try:
-
                     if current_order:
-
                         bay_number = int(current_order["bay"])
-
                         print("Go to bay: %0.4f" %(bay_number))
-
                         time.sleep(2)
-
-                        self.bayNav(bay_number)
-
-                    
-
+                        self.bayNav(bay_number)               
                         state = at_bay
-
                     else:
-
                         print("Order not found tehehe")
 
-
-
                 except Exception as e:
-
                     print(f"Error reading order: {e}")
-
                     state = marker
 
-
-
             elif state == at_bay:
-
                 shelf_number = int(current_order["shelf"])
-
                 print("Go to shelf: %0.4f" %(shelf_number))
 
-
-
                 if shelf_number % 2 == 0: # Even number shelf so left
-
                     Motor("RotateL_90")
-
                 else: # odd number shelf so right
-
                     Motor("RotateR_90")
 
-
-
                 shelfheight = int(current_order["height"])
-
-                print("Go to shelf: %0.4f" %(shelfheight))    
-
-                    
-
+                print("Go to shelf: %0.4f" %(shelfheight)) 
                 print("YELLOW LED - Picking up item ...")
-
                 time.sleep(5)
-
                 #collect.Upack()
-
                 state = done
 
-            
-
             elif state == done:
-
                 print("item picked up!")
-
                 break
-
-
-
-
 
     def exiting(self):
-
         shelf_number = int(current_order["shelf"])
-
         if shelf_number % 2 == 0: # Even number shelf
-
             angular_velocity = "RotateR_90" # Rotate right
-
         else: # odd number shelf
-
             angular_velocity = "RotateL_90" # Rotate left
 
-
-
         while True:
-
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
             if dot_success:
-
                 initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
                 print(f"Bearing for black object: {initial_bearing} radians")
 
-
-
             if initial_bearing is not None:
-
                 break
-
-
 
             steering(0, angular_velocity)
-
             time.sleep(0.1)
-
-
-
         stop() # Stop
-
         self.exitnav()
 
-
-
     def aligning(self):
-
         # Stage 1: Locate the Packing Bay
-
         while True:
-
             packing_bay_rb = None
-
             yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
-
             if yellow_success:
-
                 packing_bay_rb = self.degrees_to_radians(float(yellow_bearing))  # converting to float before converting to radians
-
                 print(f"Bearing for yellow object: {packing_bay_rb} radians")
-
             if packing_bay_rb:
-
                 stop()  # Stop rotating
-
                 break
-
             else:
-
                 turn_indefinitely("Left")  # Rotate until detected
-
             time.sleep(0.1)
 
 
@@ -603,228 +490,114 @@ class robot(object):
                 turn_indefinitely("Right")  # Rotate in the opposite direction
 
             time.sleep(0.1)
-
-                    
-
-
-
+                  
     def navigate_to_packing_bay(self):
-
         angular_tolerance = 0.1
-
         safe_stopping_distance = 0.15
-
         # Stage 1: Rotate until the packing bay is centered
-
         while True:
-
-
-
             yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
-
             if yellow_success:
-
                 packing_bay_rb = (self.cm_to_m(yellow_distance), self.degrees_to_radians(float(yellow_bearing)))  # converting to float before converting to radians
-
                 print(f"Bearing for yellow object: {packing_bay_rb} radians")
-
             if not packing_bay_rb:
-
                 turn_indefinitely("Right")  # Rotate if the packing bay is not in view
-
                 continue
-
-
-
             _range, _bearing = packing_bay_rb
-
-
-
-            print(f"Bearing: {_bearing}")
-
-            
+            print(f"Bearing: {_bearing}")           
 
             # If bearing is small enough (packing bay is centered), break to move to Stage 2
-
             if abs(_bearing) < angular_tolerance:  # Assume 0.05 rad is sufficiently centered
-
                 stop()  # Stop rotating
-
                 break
-
-
 
             angular_velocity = -0.05 if _bearing < 0 else 0.05
-
             steering(0, angular_velocity)
-
             time.sleep(0.1)
-
-
 
         # Stage 2: Drive straight towards the packing bay
-
         while True:
-
             proximity = self.cm_to_m(ultra.get_distance())
-
             yellow_success, yellow_detected, yellow_bearing, yellow_distance = vision.PackZone()
-
-            if yellow_success:
-                
+            if yellow_success:                
                 packing_bay_rb = yellow_bearing
-
             if not packing_bay_rb:
-
                 print("Lost sight of the packing bay while driving towards it!")
-
                 break  # Or implement behavior to re-orient towards the packing bay
-
-
-
-            _range, _bearing = packing_bay_rb
-
-            
+            _range, _bearing = packing_bay_rb            
 
             # If we're close enough, stop
-
             if proximity < safe_stopping_distance:  # Assume 0.15 m is a safe stopping distance
-
-                stop
-
+                stop()
                 print("Reached the packing bay")
-
                 break
-
-
 
             # Move towards the packing bay
-
             Motor("Forward_60")  # Drive straight forward
-
             time.sleep(0.1)
-
 
     def reset(self):
-
         Motor("RotateR_180")
 
-
     def exitnav(self):
-
         target_distance = 1.1  # Distance you want to be from the row marker
-
         linear_tolerance = 0.02
-
         angular_tolerance = 0.05
-
         lateral_tolerance = 0.05  # Note: You don't use this variable in the provided code
-
         time.sleep(2)
 
-
-
         while True:
-
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
             if dot_success == True:
-
                 initial_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
-                print(f"Bearing for black object: {initial_bearing} radians")
-
-            
-
+                print(f"Bearing for black object: {initial_bearing} radians")          
             if not initial_bearing or abs(initial_bearing) < angular_tolerance:
-
-                break
-
-            
+                break   
 
             angular_velocity = -0.05 if initial_bearing < 0 else 0.05
-
             steering(0, angular_velocity)
-
             time.sleep(0.1)
-
-
 
         # 3. Drive and Adjust based on Row Marker's bearing and distance
-
         while True:
-
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
-
             if dot_success == True:
-
                 row_marker_bearing = self.degrees_to_radians(float(dot_bearing))  # converting to float before converting to radians
-
                 print(f"Bearing for black object: {initial_bearing} radians")
-
             current_range = ultra.get_distance() # connect to the ultrasonic
 
-
-
             # Adjust orientation based on bearing
-
             if row_marker_bearing and abs(row_marker_bearing) > angular_tolerance:
-
                 angular_velocity = -0.05 if row_marker_bearing < 0 else 0.05
-
             else:
-
                 angular_velocity = 0
 
-
-
             # If we are within the acceptable range of the bay, stop
-
             if abs(current_range - target_distance) <= linear_tolerance:
-
                 stop()
-
                 break
 
-
-
             # If we are further than the target distance from the row marker, move backward
-
             elif current_range < target_distance:
-
                 linear_velocity = -0.05  # Negative to move backward
 
-
-
             # Otherwise, stop (should not really get here with the above conditions, but just in case)
-
             else:
-
-                linear_velocity = 0
-
-            
+                linear_velocity = 0            
 
             steering(linear_velocity, angular_velocity)
-
             time.sleep(0.1)
 
-
-
     def initAisle(self):
-
         self.currentAisle = -1
-
-
 
     def updatecurrentAisle(self):
         turn_indefinitely("Left")  # start rotating
-
         first_bearing = None
         bearings_seen = set()  # to collect bearings of the dots seen
 
         while True:
             success, _, AvgBearing, _ = self.Asile()
-
             if success:
                 # If first_bearing isn't set, set it to the first detected bearing
                 if first_bearing is None:
@@ -847,25 +620,7 @@ class robot(object):
                         return Dots_detected, "2"
 
                 bearings_seen.add(AvgBearing)
-
             time.sleep(0.1)
-
-
-
-
-    # def get_bearing_and_shelf(self, data, color_target):
-
-    #     for info in data:
-
-    #         color_name, bearing, disatance, aisle = self.parse_info(info)
-
-    #         if color_name == color_target:
-
-    #             return float(bearing)
-
-    #     return None, None
-
-
 
     def navigate(self, turn_direction, after_turn_direction, rowmarker):
 
@@ -876,10 +631,6 @@ class robot(object):
         time.sleep(2)
 
         turn_indefinitely(after_turn_direction)
-
-
-
-            
 
     def navigate_backward_until_clear(self, proximity):
 
@@ -892,23 +643,6 @@ class robot(object):
             if proximity >= 0.5:
 
                 return 'initialise'
-
-    
-
-    # def parse_info(self, info_string):
-
-    # # Example input: "('blue', -80_degrees, 0.00cm), 0_Asile"
-
-    #     color_name = info_string.split(",")[0].strip(" ()")
-
-    #     bearing = float(info_string.split(",")[1].split("_")[0].strip(" ()"))
-
-    #     distance = float(info_string.split(",")[2].split("c")[0].strip(" ()"))
-
-    #     aisle = int(info_string.split(",")[3].split("_")[0].strip(" ()"))
-
-    #     return color_name, bearing, distance, aisle
-
 
     # Function That rotates the robot away from objects
     def orient_obstacle_avoidance_rotate(self):
