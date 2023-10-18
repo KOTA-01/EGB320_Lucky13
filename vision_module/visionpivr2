@@ -1,0 +1,296 @@
+import cv2
+import numpy as np
+import picamera2
+import time
+
+class Vision:
+    def __init__(self) :
+        #Set camera Properties
+        self.cap = picamera2.Picamera2()
+        self.config = self.cap.create_video_configuration(main={"format":'XRGB8888',"size":(1640,1232)})
+        self.cap.configure(self.config)
+        self.cap.set_controls({"AwbEnable": False        })
+        self.cap.start()
+        self.ratio = 31/137
+
+        # Constants
+        self.MIN_CONTOUR_AREA_THRESHOLD = 1000
+    
+    color_ranges = {
+        'yellow': (np.array([9, 71, 0]), np.array([28, 255, 255])),
+        'blue': (np.array([104, 95, 0]), np.array([179, 255, 255])),
+        'green': (np.array([51, 82, 45]), np.array([103, 255, 255])),
+        'orange': (np.array([0, 68, 0]), np.array([60, 255, 255])),
+        'black': (np.array([0, 0, 0]), np.array([179, 73, 48]))
+        }
+
+    contour_colors = {
+        'yellow': (255, 255, 0),
+        'blue': (255, 0, 0),
+        'green': (0, 128, 0),
+        'orange': (255, 200, 0),
+        'black': (0, 0, 0)
+    }
+        
+    def detect_color_objects(self, frame, color_range):
+        frame = cv2.resize(frame, (274,205))
+        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv_frame, color_range[0], color_range[1])
+        # Create a mask to exclude the top 100 pixels
+        mask[:((frame.shape[0]//4)), :] = 0
+        # Preprocess the mask
+        mask = cv2.GaussianBlur(mask, (5, 5), 0)
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.erode(mask, kernel, iterations=2)
+        mask = cv2.dilate(mask, kernel, iterations=2)
+        # Find contours in the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Draw a line to indicate the border
+        cv2.line(frame, (0, (frame.shape[0]//4)), (frame.shape[1], (frame.shape[0]//4)), (0, 0, 255), 2)
+        return contours, mask, frame
+
+    def distance(self):
+        # distance cam - frount 8 cm
+        # Simulated data: Distance (in cm) and corresponding pixel counts (For Black)
+        black_distances = [8, 10, 15, 20, 25, 30, 35, 40 ,45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140]
+        black_pixel_width = [447, 349, 233, 177, 141, 118, 102, 88, 79, 71, 65, 59, 55, 51, 47, 44, 42, 39, 37, 35, 34, 33, 32, 30, 29, 28, 26, 26]
+        black_coefficients = np.polyfit(black_pixel_width, black_distances, 7)
+        self.black_pixel_to_distance = np.poly1d(black_coefficients)
+
+        # Simulated data: Distance (in cm) and corresponding pixel counts (For Green)
+        green_distances = [8, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,105, 110, 115, 120, 125]
+        green_pixel_width = [316, 278, 246, 231, 224, 187, 162, 141, 127, 116, 105, 96, 90, 83, 78, 73, 69, 65, 61, 59, 56, 55, 52, 50, 48]
+        green_coefficients = np.polyfit(green_pixel_width, green_distances, 7)
+        self.green_pixel_to_distance = np.poly1d(green_coefficients)
+        
+    def release_camera(self):
+        cv2.destroyAllWindows()    
+
+    def display(self):
+        # Initialize windows
+        cv2.namedWindow('Camera Feed')
+        cv2.namedWindow('Masked View')
+
+    def Test(self):
+        print("Testting......")
+        print("Done")
+        print("Vision System Ready")
+        return True
+    
+    def CheckPeople(self):
+        while True:
+            frame = self.cap.capture_array()
+            Green_Contours, Green_Mask, Green_frame = self.detect_color_objects(frame, self.color_ranges.get('green'))
+            People_detected = 0
+            center_points = []
+            bearing = []
+            for contour in Green_Contours:
+                if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
+                    cv2.drawContours(Green_frame, [contour], -1, self.contour_colors.get('green'), 2)
+                    People_detected += 1
+                    # X,Y Coords
+                    M = cv2.moments(contour)
+                    if M["m00"] != 0:
+                        cX = int(M["m10"] / M["m00"])
+                        cY = int(M["m01"] / M["m00"])
+                        cX = 274/2- cX
+                        center_points.append((cX, cY))
+                        cX = round(self.ratio * cX)
+                        bearing.append(cX)
+                    # Bearing
+            #View
+            cv2.imshow('Camera Feed', Green_frame)
+            cv2.imshow('Masked View', Green_Mask)
+
+             # Check for the 'q' key to exit the loop
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            if (People_detected == 1):
+                print("1 person detected [", cX, "]")
+                return bearing
+            elif (People_detected > 1):
+                print("Too many People")
+                return 0
+                
+            else:    
+                print("clear")
+                return 0
+                            
+        print("error")
+        return 0
+        
+        
+    def Asile(self):
+        while True:
+            frame = self.cap.capture_array()
+            Black_Contours, Black_Mask, Black_frame = self.detect_color_objects(frame, self.color_ranges.get('black'))
+            Dots_detected = 0
+            center_points = []
+            bearing = []
+            SumBearing = 0
+            Black_distances = []
+            for contour in Black_Contours:
+                if cv2.contourArea(contour) > 500:
+                    cv2.drawContours(Black_frame, [contour], -1, self.contour_colors.get('black'), 2)
+                    Dots_detected += 1
+            # Distance
+                    rect = cv2.minAreaRect(contour)
+                    width = max(rect[1]) if rect[1][0] > rect[1][1] else rect[1][1]
+                    estimated_distance = self.black_pixel_to_distance(width)
+                    Black_distances.append(estimated_distance)
+            # X,Y Coords
+                    M = cv2.moments(contour)
+                    if M["m00"] != 0:
+                        cX = int(M["m10"] / M["m00"])
+                        cY = int(M["m01"] / M["m00"])
+                        cX = 274/2 - cX
+                        cX = round(self.ratio * cX)
+                        center_points.append((cX, cY))
+            # Bearing
+                        bearing.append(cX)
+            for cX in bearing:
+                    SumBearing += cX
+            if SumBearing != 0:
+                AvgBearing = round(SumBearing/len(bearing)) 
+            else:
+                AvgBearing = 0          
+            
+            SumDistance = sum(Black_distances)
+            if SumDistance != 0:
+                AvgDistance = round(SumDistance/len(Black_distances))
+            else:
+                AvgDistance = 0
+            #View
+            cv2.imshow('Camera Feed', Black_frame)
+            cv2.imshow('Masked View', Black_Mask)
+
+             # Check for the 'q' key to exit the loop
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            if (Dots_detected == 1):
+                print("Asile1 [", AvgBearing, AvgDistance, "]")
+                return 0, 1, AvgBearing, AvgDistance
+            elif (Dots_detected == 2):
+                print("Asile2 [", AvgBearing, AvgDistance, "]")
+                return 0, 2, AvgBearing, AvgDistance
+            elif (Dots_detected == 3):
+                print("Asile3 [", AvgBearing, AvgDistance, "]")
+                return 0, 3, AvgBearing, AvgDistance
+            else:    
+                print("No Asile Found")
+                return 0
+                
+            
+        print("error")
+        return 0
+        
+    
+    def Shelves(self):
+        while True:
+                frame = self.cap.capture_array()
+                Blue_Contours, Blue_Mask, Blue_frame = self.detect_color_objects(frame, self.color_ranges.get('blue'))
+                Shelves = 0
+                center_points = []
+                bearing = []
+                for contour in Blue_Contours:
+                    if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
+                        cv2.drawContours(Blue_frame, [contour], -1, self.contour_colors.get('blue'), 2)
+                        Shelves += 1
+                        
+                        M = cv2.moments(contour)
+                        if M["m00"] != 0:
+                            cX = int(M["m10"] / M["m00"])
+                            cY = int(M["m01"] / M["m00"])
+                            cv2.circle(Blue_frame, (cX, cY), 5, (0,0,255), -1) 
+                            cX = 274//2 - cX
+                        # X,Y Coords
+                            center_points.append((cX, cY))
+                        # Bearing
+                            cX = round(self.ratio * cX)
+                            bearing.append(cX)
+                            
+                
+                if len(bearing) == 2:
+                    CenBearing = (sum(bearing)/2)                #View
+                cv2.imshow('Camera Feed', Blue_frame)
+                cv2.imshow('Masked View', Blue_Mask)
+
+                # Check for the 'q' key to exit the loop
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+                if (Shelves == 1):
+                    print("Shelve1 [", bearing[0], "]")
+                    return 0, bearing
+                elif (Shelves == 2):
+                    print("Shelve2 [",CenBearing, "]")
+                    return 0
+                elif (Shelves > 2):
+                    print("error")
+                    return 0
+                    
+                else:    
+                    print("clear")
+                    return 0            
+        print("error")
+        return 0
+        
+    
+    def PackZone(self):
+        while True:
+            frame = self.cap.capture_array()
+            frame[:, :150] = 0
+            Yellow_Contours, Yellow_Mask, Yellow_frame = self.detect_color_objects(frame, self.color_ranges.get('yellow'))
+            Zone_detected = 0
+            center_points = []
+            bearing = []
+            for contour in Yellow_Contours:
+                if cv2.contourArea(contour) > self.MIN_CONTOUR_AREA_THRESHOLD:
+                    cv2.drawContours(Yellow_frame, [contour], -1, self.contour_colors.get('yellow'), 2)
+                    Zone_detected += 1
+                    # X,Y Coords
+                    M = cv2.moments(contour)
+                    if M["m00"] != 0:
+                        cX = int(M["m10"] / M["m00"])
+                        cY = int(M["m01"] / M["m00"])
+                        cX = 274/2 - cX
+                        center_points.append((cX, cY))
+                        cX = round(self.ratio * cX)
+                        bearing.append(cX)
+                    # Bearing
+            #View
+            cv2.imshow('Camera Feed', Yellow_frame)
+            cv2.imshow('Masked View', Yellow_Mask)
+
+             # Check for the 'q' key to exit the loop
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            if (Zone_detected == 1):
+                print("Zone Detected [",bearing[0], "]")
+                return 0, bearing
+            elif (Zone_detected > 1):
+                print("Too many Zones/error")
+                return 0
+                
+            else:    
+                print("No Zone")
+                return 0
+                            
+        print("error")
+        return 0
+    
+if __name__ == "__main__":
+    vision = Vision() 
+    vision.distance()   
+    vision.display()
+    vision.Test()
+    while True:
+        vision.Asile()
+        #vision.CheckPeople()
+        #vision.Shelves()
+        #vision.PackZone()
+    vision.release_camera()
+  
