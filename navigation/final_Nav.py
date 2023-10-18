@@ -28,7 +28,7 @@ from Motor_Task import steering
 
 from ultrasonic import GroveUltrasonicRanger
 
-from Vision(PIVR) import Vision
+from vistest import Vision
 
 #from item_collection.collection01 import Collection
 
