@@ -267,93 +267,20 @@ class robot(object):
 
                 if (dot_success == False) and (state != orient_obstacle_avoidance):
 
-                    state = reposition
-
-                
-
-            elif state == orient_obstacle_avoidance:
-
-
-                obstacle_bearing = None
-
-                closest_shelf = None
+                    state = reposition           
 
 
 
-                person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
-                
-                if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                    time.sleep(1)
-
-                    if person_bearing < 0:
-
-                        while person_bearing < 0:
-
-                            turn_indefinitely("Right")
-
-                    else:
-
-                        while person_bearing > 0:
-
-                            turn_indefinitely("Left")
-
-                shelf_success, shelf_count, shelf_bearing, shelf_distance = vision.Shelves()
-
-                if shelf_success:
-
-                    Motor("RotateR_180")
-
-                    if (person_success == True) and (self.cm_to_m(person_distance) < 0.2):
-
-                        time.sleep(1)
-
-                        if obstacle_bearing < 0:
-
-                            turn_indefinitely("Right")
-
-                        else:
-
-                            turn_indefinitely("Left")
-
-                        
-
-                        Motor("Forward_40")
-
-                        time.sleep(1)
-
-                        state = orient
-
-
-
-                    else:
-
-                        Motor("Forward_40")
-
-                        time.sleep(3)
-
-                        stop()
-
-                        state = orient 
-
-                
-
-                else:
-
-                    state = orient
 
             
 
             elif state == reposition:
 
-                stop() # Stop
-
+                stop() # Stop 
                 print("unable to find row marker")
-
                 time.sleep(2)
 
-                turn_indefinitely("Right") # Rotate 360 degrees
-
+                # Rotates anticlockwise until it see packingbay, then angles off. 
                 self.aligning()
 
 
@@ -1466,4 +1393,62 @@ class robot(object):
     #     aisle = int(info_string.split(",")[3].split("_")[0].strip(" ()"))
 
     #     return color_name, bearing, distance, aisle
+
+
+    # Function That rotates the robot away from objects
+    def orient_obstacle_avoidance_rotate(self):
+        person_success, person_count, person_bearing, person_distance = vision.CheckPeople() 
+        while ((ultra.get_distance() < 20) or ((person_success == True) and (person_distance < 0.2))):                          
+             # Person Avoidance Section          
+            if (person_success == True):
+                stop()
+                time.sleep(1)
+                while (person_success == True):
+                    if (person_bearing < 0):
+                        turn_indefinitely("Right")
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+                    elif (person_bearing > 0):
+                        turn_indefinitely("Left")
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+                    else:
+                        # person_bering == 0
+                        turn_indefinitely("Left")
+                        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()         
+                stop()
+                time.sleep(1)
+            if(ultra.get_distance() < 20):
+                turn_indefinitely("Right")
+                ultra.get_distance()
+            stop() 
+            person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+    
+    # Function That moves the robot away from objects
+    def orient_obstacle_avoidance_move(self): 
+        self.orient_obstacle_avoidance_rotate()
+        person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+        if ((ultra.get_distance() < 20) or ((person_success == True) and (person_distance < 0.2))):
+            self.orient_obstacle_avoidance_rotate()
+        else:
+            start_time = time.time()
+            while True:
+                current_time = time.time()
+                elapsed_time = current_time - start_time
+                if elapsed_time >= 2:
+                    stop()
+                    return 
+                else:
+                    Motor("Forward_40")
+                    person_success, person_count, person_bearing, person_distance = vision.CheckPeople()
+                    if ((ultra.get_distance() < 20) or ((person_success == True) and (person_distance < 0.2))):
+                        return self.orient_obstacle_avoidance_move()
+      
+
+  
+
+
+
+
+
+
+
 
