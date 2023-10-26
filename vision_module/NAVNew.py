@@ -80,14 +80,12 @@ class robot(object):
         print("Robot")
          
     # Function Navigates the Robot down the Asile
-    def Operations(self, Aisle, Section, Height, Side):
-        claw.Drift_mode() 
+    def Operations(self, Aisle, Section, Height, Side): 
         time.sleep(1) 
-        Scanning = 0
-        
+        Scanning = 0        
         lib = []
+
         while (True): 
-            claw.Drift_mode() 
             dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
             if (Dots_detected == Aisle):
                 Scanning = 0
@@ -102,24 +100,25 @@ class robot(object):
                     elif (Section == 2):
                         desired_distance = 42 # section 2
                     elif (Section == 3):
-                        desired_distance = 25 # section 3
+                        desired_distance = 23 # section 3
                     elif (Section == 4):
-                        desired_distance = 22 # section 4
+                        desired_distance = 18 # section 4
                     else:
                         print("error")
+                    
                     if (dot_distance > desired_distance):                               
                         stop()
                         if (Side == 0):
                             turn_indefinitely("Left")
+                            
                         elif (Side == 1):
                             turn_indefinitely("Right")
-                        
-                        
-                        
+                        time.sleep(4)
+                        stop()
+
                         while (True):
                             Object_Found, Object_bearing = vision.Object()
                             if (Object_Found == True):
-                                time.sleep(0.1)
                                 if (Object_bearing > 1):
                                     turn_indefinitely("Left") # rotate 360 degrees
                                 elif (Object_bearing < -1):
@@ -148,6 +147,7 @@ class robot(object):
                                     stop()
                                     claw.Servo_Vert("low")
                                     time.sleep(1)
+                                    
                                     while True:
                                         dot_success, Dots_detected, dot_bearing, dot_distance = vision.Aisle()
                                         if (Dots_detected > 0):
@@ -231,10 +231,9 @@ class robot(object):
                             Motor("Forward_60")
                             time.sleep(3)
                             Scanning = 0
-                            break
+                            break 
             
-            
-            elif Dots_detected > Aisle:
+            elif (Dots_detected > Aisle):
                 if (Dots_detected != 0):
                     lib.append(Dots_detected)
                 if (len(lib) == 5):
@@ -247,7 +246,7 @@ class robot(object):
                     stop()
                     lib = []
                     
-            elif Dots_detected < Aisle:
+            elif (Dots_detected < Aisle):
                 if (Dots_detected != 0):
                     lib.append(Dots_detected)
                 if (len(lib) == 5):
