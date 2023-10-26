@@ -78,9 +78,18 @@ current_order = order_reader.ReadOrder("Order_1.csv")
 class robot(object): 
     def __init__(self):
         print("Robot")
+        #current_order = (1, 2, 3, 1, ball)
+
+        if (operation(current_order) == True):
+            current_order = order_reader.next_order()
+            if (operation(current_order) == True):
+                current_order = order_reader.next_order()
+                if (operation(current_order) == True):
+                    print("done")
+
          
     # Function Navigates the Robot down the Asile
-    def Operations(self, Aisle, Section, Height, Side): 
+    def Operations(self, Aisle, Height, Section): 
         time.sleep(1) 
         Scanning = 0        
         lib = []
@@ -95,23 +104,25 @@ class robot(object):
                     turn_indefinitely("Right") # rotate 360 degrees                           
                 else:
                     Motor("Forward_60")
-                    if (Section == 1):
-                        desired_distance = 81 # section 1
+                    if (Section == 3):
+                        desired_distance = 81 # section 3 clostest to wall
                     elif (Section == 2):
                         desired_distance = 42 # section 2
-                    elif (Section == 3):
-                        desired_distance = 23 # section 3
-                    elif (Section == 4):
-                        desired_distance = 18 # section 4
+                    elif (Section == 1):
+                        desired_distance = 23 # section 1
+                    elif (Section == 0):
+                        desired_distance = 18 # section 0
                     else:
                         print("error")
                     
                     if (dot_distance > desired_distance):                               
                         stop()
-                        if (Side == 0):
-                            turn_indefinitely("Left")
-                            
-                        elif (Side == 1):
+                        
+                        if (Aisle % 2) == 0:
+                            side = 0
+                            turn_indefinitely("Left") 
+                        else:
+                            side = 1
                             turn_indefinitely("Right")
                         time.sleep(4)
                         stop()
@@ -210,9 +221,9 @@ class robot(object):
                                         else:
                                             turn_indefinitely("Right")    
                             else:
-                                if (Side == 0):
+                                if (side == 0):
                                     turn_indefinitely("Right")
-                                elif (Side == 1):
+                                elif (side == 1):
                                     turn_indefinitely("Left")
         
             elif (Dots_detected == 0):                              
